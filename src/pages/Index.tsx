@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import PhimHeroBanner from "@/components/PhimHeroBanner";
 import PhimCarousel from "@/components/PhimCarousel";
+import AdBanner from "@/components/AdBanner";
 import { getPhimList, getPhimByCategory } from "@/services/phimapi";
 
 const Index = () => {
@@ -22,14 +23,17 @@ const Index = () => {
       <PhimHeroBanner movies={heroMovies} />
 
       <div className="-mt-20 relative z-10 space-y-2">
+        <AdBanner position="home_top" className="px-6 sm:px-12 max-w-[1400px] mx-auto mb-4" />
         <PhimCarousel title="Phim Bộ Mới" movies={phimBo.data?.data?.items ?? []} loading={phimBo.isLoading} />
         <PhimCarousel title="Phim Lẻ Mới" movies={phimLe.data?.data?.items ?? []} loading={phimLe.isLoading} />
         <PhimCarousel title="TV Shows" movies={tvShows.data?.data?.items ?? []} loading={tvShows.isLoading} />
         <PhimCarousel title="Hoạt Hình" movies={hoatHinh.data?.data?.items ?? []} loading={hoatHinh.isLoading} />
+        <AdBanner position="home_mid" className="px-6 sm:px-12 max-w-[1400px] mx-auto my-4" />
         <PhimCarousel title="Hành Động" movies={hanhDong.data?.data?.items ?? []} loading={hanhDong.isLoading} />
         <PhimCarousel title="Tình Cảm" movies={tinhCam.data?.data?.items ?? []} loading={tinhCam.isLoading} />
         <PhimCarousel title="Kinh Dị" movies={kinhDi.data?.data?.items ?? []} loading={kinhDi.isLoading} />
         <PhimCarousel title="Cổ Trang" movies={coTrang.data?.data?.items ?? []} loading={coTrang.isLoading} />
+        <AdBanner position="home_bottom" className="px-6 sm:px-12 max-w-[1400px] mx-auto mt-4" />
       </div>
 
       <footer className="py-12 px-6 sm:px-12 text-center text-muted-foreground text-xs mt-8">

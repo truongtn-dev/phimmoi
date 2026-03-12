@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Play, Heart, Clock, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import AdBanner from "@/components/AdBanner";
 import { getPhimDetail, getPhimImageUrl } from "@/services/phimapi";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,6 +203,7 @@ const MovieDetail = () => {
             )}
           </div>
         </div>
+        <AdBanner position="detail_sidebar" className="mt-8" />
       </div>
 
       <div className="h-24" />

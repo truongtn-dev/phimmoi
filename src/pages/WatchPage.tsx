@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import AdBanner from "@/components/AdBanner";
 import { getPhimDetail, getPhimImageUrl } from "@/services/phimapi";
 import { useState } from "react";
 
@@ -55,6 +56,7 @@ const WatchPage = () => {
       <Navbar />
 
       <div className="pt-16">
+        <AdBanner position="watch_top" className="max-w-[1200px] mx-auto px-4 py-2" />
         {/* Video Player */}
         <div className="w-full bg-black">
           <div className="max-w-[1200px] mx-auto">
@@ -167,6 +169,7 @@ const WatchPage = () => {
               <p className="text-sm text-foreground/70 line-clamp-4" dangerouslySetInnerHTML={{ __html: movie.content }} />
             </div>
           </div>
+          <AdBanner position="watch_bottom" className="mt-6" />
         </div>
       </div>
     </div>
