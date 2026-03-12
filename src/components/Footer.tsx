@@ -5,7 +5,6 @@ const Footer = () => {
   return (
     <footer className="border-t border-border/40 mt-12 bg-background">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-12 py-10">
-        {/* Categories */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-3">Loại Phim</h3>
@@ -56,7 +55,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom */}
         <div className="border-t border-border/30 pt-6 text-center">
           <p className="text-xs text-muted-foreground">© 2026 CineStream</p>
         </div>
