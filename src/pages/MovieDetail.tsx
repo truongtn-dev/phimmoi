@@ -203,6 +203,7 @@ const MovieDetail = () => {
             )}
           </div>
         </div>
+        <AdBanner position="detail_sidebar" className="mt-8" />
       </div>
 
       <div className="h-24" />
