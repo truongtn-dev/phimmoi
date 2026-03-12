@@ -56,6 +56,7 @@ const WatchPage = () => {
       <Navbar />
 
       <div className="pt-16">
+        <AdBanner position="watch_top" className="max-w-[1200px] mx-auto px-4 py-2" />
         {/* Video Player */}
         <div className="w-full bg-black">
           <div className="max-w-[1200px] mx-auto">
