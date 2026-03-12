@@ -71,6 +71,21 @@ const MovieDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title={movie.name}
+        description={movie.content?.replace(/<[^>]*>/g, '').slice(0, 155) || `Xem phim ${movie.name} online miễn phí chất lượng cao`}
+        canonical={`https://cinestream.lovable.app/movie/${id}`}
+        type="video.movie"
+        image={getPhimImageUrl(movie.poster_url)}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Movie",
+          "name": movie.name,
+          "description": movie.content?.replace(/<[^>]*>/g, '').slice(0, 300),
+          "image": getPhimImageUrl(movie.poster_url),
+          "dateCreated": movie.year?.toString(),
+        }}
+      />
       <Navbar />
 
       {/* Hero backdrop */}
