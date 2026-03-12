@@ -35,6 +35,9 @@ const App = () => (
             <Route path="/favorites" element={
               <ProtectedRoute><Favorites /></ProtectedRoute>
             } />
+            <Route path="/profile" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
+            } />
             <Route path="/admin" element={
               <ProtectedRoute adminOnly><Admin /></ProtectedRoute>
             } />

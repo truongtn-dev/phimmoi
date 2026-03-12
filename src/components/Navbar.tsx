@@ -110,7 +110,10 @@ const Navbar = () => {
             <Link to="/admin" className="block text-sm text-foreground/80" onClick={() => setMobileOpen(false)}>Admin</Link>
           )}
           {user ? (
-            <button onClick={handleLogout} className="block text-sm text-foreground/80">Sign Out</button>
+            <>
+              <Link to="/profile" className="block text-sm text-foreground/80" onClick={() => setMobileOpen(false)}>Hồ sơ</Link>
+              <button onClick={handleLogout} className="block text-sm text-foreground/80">Sign Out</button>
+            </>
           ) : (
             <>
               <Link to="/login" className="block text-sm text-foreground/80" onClick={() => setMobileOpen(false)}>Sign In</Link>
