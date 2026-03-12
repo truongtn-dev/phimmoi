@@ -20,6 +20,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead canonical="https://cinestream.lovable.app/" />
       <Navbar />
       <PhimHeroBanner movies={heroMovies} />
 
