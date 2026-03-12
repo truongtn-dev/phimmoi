@@ -36,6 +36,7 @@ const SearchPage = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-24 px-6 sm:px-12 max-w-[1400px] mx-auto">
+        <AdBanner position="search_top" className="mb-6" />
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">
           {query ? `Kết quả tìm kiếm "${query}"` : "Duyệt theo thể loại"}
         </h1>

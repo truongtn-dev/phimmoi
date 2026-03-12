@@ -169,6 +169,7 @@ const WatchPage = () => {
               <p className="text-sm text-foreground/70 line-clamp-4" dangerouslySetInnerHTML={{ __html: movie.content }} />
             </div>
           </div>
+          <AdBanner position="watch_bottom" className="mt-6" />
         </div>
       </div>
     </div>
