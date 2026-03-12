@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import PhimHeroBanner from "@/components/PhimHeroBanner";
 import PhimCarousel from "@/components/PhimCarousel";
+import AdBanner from "@/components/AdBanner";
 import { getPhimList, getPhimByCategory } from "@/services/phimapi";
 
 const Index = () => {
