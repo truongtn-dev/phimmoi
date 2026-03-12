@@ -31,13 +31,7 @@ const AdBanner = ({ position, className = "" }: AdBannerProps) => {
   }
 
   if (!banners || banners.length === 0) {
-    return (
-      <div className={`w-full ${className}`}>
-        <div className="w-full h-[90px] rounded-lg border-2 border-dashed border-border/50 flex items-center justify-center bg-muted/20">
-          <span className="text-muted-foreground text-xs">Quảng cáo</span>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

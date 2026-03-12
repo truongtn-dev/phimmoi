@@ -5,6 +5,7 @@ import PhimCarousel from "@/components/PhimCarousel";
 import AdBanner from "@/components/AdBanner";
 import SEOHead from "@/components/SEOHead";
 import { getPhimList, getPhimByCategory } from "@/services/phimapi";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   const phimBo = useQuery({ queryKey: ["phim-bo"], queryFn: () => getPhimList("phim-bo", 1, 20) });
