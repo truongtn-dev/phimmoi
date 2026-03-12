@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import PhimCard from "@/components/PhimCard";
 import MovieCardSkeleton from "@/components/MovieCardSkeleton";
+import AdBanner from "@/components/AdBanner";
 import { searchPhim, getPhimByCategory, PHIM_CATEGORIES } from "@/services/phimapi";
 import { useState } from "react";
 
