@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MovieDetail from "./pages/MovieDetail";
+import WatchPage from "./pages/WatchPage";
 import SearchPage from "./pages/SearchPage";
 import Favorites from "./pages/Favorites";
 import Admin from "./pages/Admin";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/movie/:id" element={<MovieDetail />} />
+            <Route path="/watch/:slug" element={<WatchPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/favorites" element={
               <ProtectedRoute><Favorites /></ProtectedRoute>

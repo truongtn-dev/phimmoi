@@ -1,38 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
-import HeroBanner from "@/components/HeroBanner";
-import MovieCarousel from "@/components/MovieCarousel";
-import { getTrending, getPopular, getTopRated, getUpcoming, getByGenre, GENRES } from "@/services/tmdb";
+import PhimHeroBanner from "@/components/PhimHeroBanner";
+import PhimCarousel from "@/components/PhimCarousel";
+import { getPhimList, getPhimByCategory } from "@/services/phimapi";
 
 const Index = () => {
-  const trending = useQuery({ queryKey: ["trending"], queryFn: () => getTrending() });
-  const popular = useQuery({ queryKey: ["popular"], queryFn: () => getPopular() });
-  const topRated = useQuery({ queryKey: ["topRated"], queryFn: () => getTopRated() });
-  const upcoming = useQuery({ queryKey: ["upcoming"], queryFn: () => getUpcoming() });
-  const action = useQuery({ queryKey: ["genre", 28], queryFn: () => getByGenre("28") });
-  const comedy = useQuery({ queryKey: ["genre", 35], queryFn: () => getByGenre("35") });
-  const horror = useQuery({ queryKey: ["genre", 27], queryFn: () => getByGenre("27") });
-  const scifi = useQuery({ queryKey: ["genre", 878], queryFn: () => getByGenre("878") });
+  const phimBo = useQuery({ queryKey: ["phim-bo"], queryFn: () => getPhimList("phim-bo", 1, 20) });
+  const phimLe = useQuery({ queryKey: ["phim-le"], queryFn: () => getPhimList("phim-le", 1, 20) });
+  const tvShows = useQuery({ queryKey: ["tv-shows"], queryFn: () => getPhimList("tv-shows", 1, 20) });
+  const hoatHinh = useQuery({ queryKey: ["hoat-hinh"], queryFn: () => getPhimList("hoat-hinh", 1, 20) });
+  const hanhDong = useQuery({ queryKey: ["cat-hanh-dong"], queryFn: () => getPhimByCategory("hanh-dong", 1, 20) });
+  const tinhCam = useQuery({ queryKey: ["cat-tinh-cam"], queryFn: () => getPhimByCategory("tinh-cam", 1, 20) });
+  const kinhDi = useQuery({ queryKey: ["cat-kinh-di"], queryFn: () => getPhimByCategory("kinh-di", 1, 20) });
+  const coTrang = useQuery({ queryKey: ["cat-co-trang"], queryFn: () => getPhimByCategory("co-trang", 1, 20) });
+
+  const heroMovies = phimBo.data?.data?.items?.slice(0, 5) ?? [];
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <HeroBanner movies={trending.data?.results?.slice(0, 5) ?? []} />
+      <PhimHeroBanner movies={heroMovies} />
 
       <div className="-mt-20 relative z-10 space-y-2">
-        <MovieCarousel title="Trending Now" movies={trending.data?.results ?? []} loading={trending.isLoading} />
-        <MovieCarousel title="Popular" movies={popular.data?.results ?? []} loading={popular.isLoading} />
-        <MovieCarousel title="Top Rated" movies={topRated.data?.results ?? []} loading={topRated.isLoading} />
-        <MovieCarousel title="Coming Soon" movies={upcoming.data?.results ?? []} loading={upcoming.isLoading} />
-        <MovieCarousel title="Action" movies={action.data?.results ?? []} loading={action.isLoading} />
-        <MovieCarousel title="Comedy" movies={comedy.data?.results ?? []} loading={comedy.isLoading} />
-        <MovieCarousel title="Horror" movies={horror.data?.results ?? []} loading={horror.isLoading} />
-        <MovieCarousel title="Sci-Fi" movies={scifi.data?.results ?? []} loading={scifi.isLoading} />
+        <PhimCarousel title="Phim Bộ Mới" movies={phimBo.data?.data?.items ?? []} loading={phimBo.isLoading} />
+        <PhimCarousel title="Phim Lẻ Mới" movies={phimLe.data?.data?.items ?? []} loading={phimLe.isLoading} />
+        <PhimCarousel title="TV Shows" movies={tvShows.data?.data?.items ?? []} loading={tvShows.isLoading} />
+        <PhimCarousel title="Hoạt Hình" movies={hoatHinh.data?.data?.items ?? []} loading={hoatHinh.isLoading} />
+        <PhimCarousel title="Hành Động" movies={hanhDong.data?.data?.items ?? []} loading={hanhDong.isLoading} />
+        <PhimCarousel title="Tình Cảm" movies={tinhCam.data?.data?.items ?? []} loading={tinhCam.isLoading} />
+        <PhimCarousel title="Kinh Dị" movies={kinhDi.data?.data?.items ?? []} loading={kinhDi.isLoading} />
+        <PhimCarousel title="Cổ Trang" movies={coTrang.data?.data?.items ?? []} loading={coTrang.isLoading} />
       </div>
 
-      {/* Footer */}
       <footer className="py-12 px-6 sm:px-12 text-center text-muted-foreground text-xs mt-8">
-        <p>© 2026 CineStream. Powered by TMDB.</p>
+        <p>© 2026 CineStream. Dữ liệu phim từ PhimAPI.</p>
       </footer>
     </div>
   );
