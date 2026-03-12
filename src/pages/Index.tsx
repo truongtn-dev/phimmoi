@@ -38,9 +38,7 @@ const Index = () => {
         <AdBanner position="home_bottom" className="px-6 sm:px-12 max-w-[1400px] mx-auto mt-4" />
       </div>
 
-      <footer className="py-12 px-6 sm:px-12 text-center text-muted-foreground text-xs mt-8">
-        <p>© 2026 CineStream. Dữ liệu phim từ PhimAPI.</p>
-      </footer>
+      <Footer />
     </div>
   );
 };
