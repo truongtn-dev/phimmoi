@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Heart, Clock, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import AdBanner from "@/components/AdBanner";
+import SEOHead from "@/components/SEOHead";
 import { getPhimDetail, getPhimImageUrl } from "@/services/phimapi";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
