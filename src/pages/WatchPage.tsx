@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import AdBanner from "@/components/AdBanner";
 import { getPhimDetail, getPhimImageUrl } from "@/services/phimapi";
 import { useState } from "react";
 
