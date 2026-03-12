@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import PhimCard from "@/components/PhimCard";
 import MovieCardSkeleton from "@/components/MovieCardSkeleton";
 import AdBanner from "@/components/AdBanner";
+import SEOHead from "@/components/SEOHead";
 import { searchPhim, getPhimByCategory, PHIM_CATEGORIES } from "@/services/phimapi";
 import { useState } from "react";
 
@@ -34,6 +35,11 @@ const SearchPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title={query ? `Tìm kiếm: ${query}` : "Tìm kiếm phim"}
+        description={query ? `Kết quả tìm kiếm cho "${query}" trên CineStream` : "Tìm kiếm phim online miễn phí trên CineStream"}
+        canonical={`https://cinestream.lovable.app/search${query ? `?q=${query}` : ''}`}
+      />
       <Navbar />
       <div className="pt-24 px-6 sm:px-12 max-w-[1400px] mx-auto">
         <AdBanner position="search_top" className="mb-6" />

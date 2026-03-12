@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import PhimHeroBanner from "@/components/PhimHeroBanner";
 import PhimCarousel from "@/components/PhimCarousel";
 import AdBanner from "@/components/AdBanner";
+import SEOHead from "@/components/SEOHead";
 import { getPhimList, getPhimByCategory } from "@/services/phimapi";
 
 const Index = () => {
@@ -19,6 +20,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead canonical="https://cinestream.lovable.app/" />
       <Navbar />
       <PhimHeroBanner movies={heroMovies} />
 
