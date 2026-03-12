@@ -5,6 +5,7 @@ import PhimCarousel from "@/components/PhimCarousel";
 import AdBanner from "@/components/AdBanner";
 import SEOHead from "@/components/SEOHead";
 import { getPhimList, getPhimByCategory } from "@/services/phimapi";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   const phimBo = useQuery({ queryKey: ["phim-bo"], queryFn: () => getPhimList("phim-bo", 1, 20) });
@@ -38,9 +39,7 @@ const Index = () => {
         <AdBanner position="home_bottom" className="px-6 sm:px-12 max-w-[1400px] mx-auto mt-4" />
       </div>
 
-      <footer className="py-12 px-6 sm:px-12 text-center text-muted-foreground text-xs mt-8">
-        <p>© 2026 CineStream. Dữ liệu phim từ PhimAPI.</p>
-      </footer>
+      <Footer />
     </div>
   );
 };
