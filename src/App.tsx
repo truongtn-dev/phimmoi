@@ -12,6 +12,7 @@ import MovieDetail from "./pages/MovieDetail";
 import WatchPage from "./pages/WatchPage";
 import SearchPage from "./pages/SearchPage";
 import Favorites from "./pages/Favorites";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
