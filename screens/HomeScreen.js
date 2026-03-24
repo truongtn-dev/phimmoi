@@ -20,7 +20,12 @@ export default function HomeScreen({ navigation }) {
     queryFn: async () => {
       const { supabase } = await import('../integrations/supabase/client');
       const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
-      return data || [];
+      return (data || []).map(m => ({
+        ...m,
+        name: m.title || "Không có tên",
+        thumb_url: m.poster_url,
+        year: (m.release_date || "").split('-')[0] || "N/A"
+      }));
     }
   });
 

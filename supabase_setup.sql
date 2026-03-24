@@ -1,13 +1,11 @@
--- WARNING: This will reset the ratings table schema to support both API and Supabase movies
--- RE-RUN THIS ONLY IF YOU GET "invalid input syntax for type uuid" ERROR
+-- Supabase Setup Script
+-- 0. Ensure movies columns exists
+ALTER TABLE IF EXISTS public.movies ADD COLUMN IF NOT EXISTS video_url text;
+ALTER TABLE IF EXISTS public.movies ADD COLUMN IF NOT EXISTS episodes jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE IF EXISTS public.movies ADD COLUMN IF NOT EXISTS is_api_source boolean DEFAULT false;
 
--- 0. Add missing column to movies table if needed
-ALTER TABLE IF EXISTS public.movies ADD COLUMN IF NOT EXISTS video_url text COLLATE "C";
-
--- 1. Reset and Create ratings table
-DROP TABLE IF EXISTS public.ratings CASCADE;
-
-CREATE TABLE public.ratings (
+-- 1. Create ratings table
+CREATE TABLE IF NOT EXISTS public.ratings (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     movie_id text NOT NULL, -- Can be UUID or Slug
     user_email text NOT NULL,
@@ -17,8 +15,19 @@ CREATE TABLE public.ratings (
     UNIQUE(movie_id, user_email)
 );
 
--- 2. Add Row Level Security
-ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
+-- 2. Create blocked_movies table (for hiding API content)
+CREATE TABLE IF NOT EXISTS public.blocked_movies (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    movie_slug text UNIQUE NOT NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
--- Allow all actions for now for simplicity of development
-CREATE POLICY "Allow all manage" ON public.ratings FOR ALL USING (true);
+-- 3. Row Level Security policies
+ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blocked_movies ENABLE ROW LEVEL SECURITY;
+
+-- Allow everything for development (adjust for production if needed)
+CREATE POLICY "Public read all" ON public.ratings FOR SELECT USING (true);
+CREATE POLICY "Public read blocked" ON public.blocked_movies FOR SELECT USING (true);
+CREATE POLICY "Admin manage all" ON public.ratings FOR ALL USING (true);
+CREATE POLICY "Admin manage blocked" ON public.blocked_movies FOR ALL USING (true);

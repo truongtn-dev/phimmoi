@@ -9,6 +9,10 @@ import { COLORS, RADIUS, FONT, SPACING } from '../constants/theme';
 import { Film, Tag, Monitor, ChevronLeft } from '../components/common/icons';
 import { useAuth } from '../context/AuthContext';
 import YoutubePlayer from 'react-native-youtube-iframe';
+import { Dimensions } from 'react-native';
+
+const { width: SCREEN_W } = Dimensions.get('window');
+const PLAYER_H = (SCREEN_W - SPACING.lg * 2) * 9 / 16;
 
 const getYTId = (url) => {
   if (!url) return null;
@@ -27,13 +31,17 @@ function PlayerView({ url, onUpdate, initialTime }) {
   // --- YOUTUBE PLAYER ---
   if (ytId) {
     return (
-      <View style={styles.videoPlayer}>
+      <View style={[styles.videoPlayer, { height: PLAYER_H }]}>
         <YoutubePlayer
           ref={playerRef}
-          height={220}
+          height={PLAYER_H}
           videoId={ytId}
           play={true}
-          initialPlayerParams={{ start: Math.floor(initialTime) }}
+          initialPlayerParams={{ 
+            start: Math.floor(initialTime),
+            modestbranding: 1,
+            rel: 0
+          }}
         />
         <YouTubeTracker playerRef={playerRef} onUpdate={(t, d) => updateRef.current(t, d)} />
       </View>
@@ -114,9 +122,18 @@ export default function WatchScreen({ route, navigation }) {
         const { supabase } = await import('../integrations/supabase/client');
         const { data: movie } = await supabase.from('movies').select('*').eq('id', id).single();
         if (movie) {
+          const supabaseEps = (movie.episodes && Array.isArray(movie.episodes) && movie.episodes.length > 0)
+            ? movie.episodes.map(e => ({ name: e.name, slug: e.name, link_m3u8: e.link }))
+            : [{ name: 'Full', slug: 'full', link_m3u8: movie.video_url }];
+
           return {
-            movie: { ...movie, name: movie.title, slug: movie.id },
-            episodes: [{ server_data: [{ name: 'Full', slug: movie.id, link_m3u8: movie.video_url }] }]
+            movie: { 
+              ...movie, 
+              name: movie.title, 
+              slug: movie.id, 
+              content: movie.description // Map description to content
+            },
+            episodes: [{ server_data: supabaseEps }]
           };
         }
       }
@@ -175,13 +192,15 @@ export default function WatchScreen({ route, navigation }) {
   if (!movie) return <View style={styles.center}><Text style={styles.emptyText}>Không tìm thấy phim</Text></View>;
 
   const content = (movie?.content || '').replace(/<[^>]*>/g, '');
-  const genres = movie?.category?.map((c) => c.name).join(', ') || '';
+  const genres = Array.isArray(movie?.category) 
+    ? movie.category.map((c) => c.name).join(', ') 
+    : (movie?.category || ''); // Handle string category from Supabase
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={{flexDirection:'row', alignItems:'center', marginBottom: SPACING.md}}>
         <Pressable onPress={() => navigation.goBack()} style={{padding: 4, marginRight: 8}}><ChevronLeft size={24} color="#fff"/></Pressable>
-        <Text style={[styles.heading, {marginBottom:0}]} numberOfLines={1}>{movie.name}</Text>
+        <Text style={[styles.heading, {marginBottom:0, flex: 1}]}>{movie.name}</Text>
       </View>
 
       {currentVideoUrl ? (
@@ -237,8 +256,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
   emptyText: { color: COLORS.textSecondary },
   heading: { color: COLORS.textPrimary, fontSize: FONT.lg, fontWeight: '700', marginBottom: SPACING.md },
-  videoPlayer: { width: '100%', height: 220, backgroundColor: '#000', borderRadius: RADIUS.md, marginBottom: SPACING.lg },
-  videoPlaceholder: { width: '100%', height: 220, backgroundColor: COLORS.card, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, marginBottom: SPACING.lg },
+  videoPlayer: { width: '100%', height: PLAYER_H, backgroundColor: '#000', borderRadius: RADIUS.md, marginBottom: SPACING.lg, overflow: 'hidden' },
+  videoPlaceholder: { width: '100%', height: PLAYER_H, backgroundColor: COLORS.card, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.md, marginBottom: SPACING.lg },
   placeholderIcon: { fontSize: 40, marginBottom: 8 },
   placeholderText: { color: COLORS.textSecondary, fontSize: FONT.sm },
   sectionTitle: { color: COLORS.textPrimary, fontSize: FONT.md, fontWeight: '700', marginBottom: SPACING.md },

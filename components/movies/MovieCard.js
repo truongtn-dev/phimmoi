@@ -15,7 +15,7 @@ function MovieCard({ movie, onPress, width = 140 }) {
       ]}
     >
       <Image source={{ uri: posterUri }} style={[styles.poster, { width, height: width * 1.5 }]} />
-      <Text style={styles.title} numberOfLines={1}>{movie?.name || 'Đang cập nhật'}</Text>
+      <Text style={styles.title}>{movie?.name || movie?.title || 'Đang cập nhật'}</Text>
       <Text style={styles.sub} numberOfLines={1}>{movie?.year || ''} {movie?.origin_name ? `• ${movie.origin_name}` : ''}</Text>
     </Pressable>
   );

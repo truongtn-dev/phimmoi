@@ -47,6 +47,8 @@ export default function AdminMoviesScreen() {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [dateModalVisible, setDateModalVisible] = useState(false);
+  const [dateStep, setDateStep] = useState('year'); // year, month, day
+  const [tempDate, setTempDate] = useState({ y: '', m: '', d: '' });
   const [editingMovie, setEditingMovie] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -58,8 +60,10 @@ export default function AdminMoviesScreen() {
     trailer_url: '',
     category: '', 
     video_url: '', 
-    release_date: ''
+    release_date: '',
+    episodes: [] // Array of { name, link }
   });
+  const [newEp, setNewEp] = useState({ name: '', link: '' });
 
   const pickAndUploadImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -109,8 +113,18 @@ export default function AdminMoviesScreen() {
 
   const fetchMovies = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
-    if (!error && data) setMovies(data);
+    const { data: moviesData } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+    
+    // Fetch average ratings for all these movies
+    const { data: ratingsData } = await supabase.from('ratings').select('movie_id, rating');
+    
+    const enrichedMovies = (moviesData || []).map(m => {
+      const roomRatings = (ratingsData || []).filter(r => r.movie_id === m.id);
+      const avg = roomRatings.length > 0 ? roomRatings.reduce((sum, r) => sum + r.rating, 0) / roomRatings.length : 0;
+      return { ...m, rating: avg.toFixed(1) };
+    });
+
+    setMovies(enrichedMovies);
     
     // Fetch categories
     const { data: catData } = await supabase.from('categories').select('id, name');
@@ -134,7 +148,8 @@ export default function AdminMoviesScreen() {
       trailer_url: form.trailer_url,
       category: form.category,
       release_date: form.release_date,
-      video_url: form.video_url || ''
+      video_url: form.video_url || '',
+      episodes: form.episodes || []
     };
 
     if (editingMovie) {
@@ -152,7 +167,7 @@ export default function AdminMoviesScreen() {
       else { 
         Alert.alert('Thành công', 'Đã thêm phim mới. Đang quay về Trang chủ...'); 
         setModalVisible(false); 
-        navigation.navigate('Main', { screen: 'HomeTab' }); // Back to Home
+        navigation.navigate('MainTabs'); // Correct route name
       }
     }
   };
@@ -178,24 +193,31 @@ export default function AdminMoviesScreen() {
         trailer_url: movie.trailer_url || '',
         category: movie.category || '', 
         video_url: movie.video_url || '',
-        release_date: movie.release_date || ''
+        release_date: movie.release_date || '',
+        episodes: movie.episodes || []
       });
     } else {
       setEditingMovie(null);
       setForm({ 
         title: '', description: '', poster_url: '', backdrop_url: '', 
-        trailer_url: '', category: '', video_url: '', release_date: '' 
+        trailer_url: '', category: '', video_url: '', release_date: '',
+        episodes: []
       });
     }
     setModalVisible(true);
+  };
+
+  const openDatePicker = () => {
+    setDateStep('year');
+    setDateModalVisible(true);
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Image source={{ uri: item.poster_url || 'https://via.placeholder.com/150' }} style={styles.itemPoster} />
       <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.meta}>{item.category || 'No Category'} • ⭐ {item.rating}</Text>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.meta}>{item.category || 'No Category'} • ⭐ {item.rating || 0}</Text>
       </View>
       <View style={styles.actions}>
         <Pressable onPress={() => openModal(item)} style={styles.actionBtn}>
@@ -272,6 +294,52 @@ export default function AdminMoviesScreen() {
               <Text style={styles.label}>Link Video hoặc Iframe (YouTube/HLS)</Text>
               <TextInput style={styles.input} value={form.video_url} onChangeText={t => setForm({...form, video_url: t})} placeholderTextColor="#666" placeholder="Movie stream link" />
 
+              <Text style={styles.label}>Link Video (HLS/YouTube)</Text>
+              <TextInput style={styles.input} value={form.video_url} onChangeText={t => setForm({...form, video_url: t})} placeholder="Dán link tập 1 (hoặc tập duy nhất)" placeholderTextColor="#666" />
+
+              <View style={{ marginTop: SPACING.lg, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: SPACING.md }}>
+                <Text style={[styles.modalTitle, { fontSize: FONT.md, textAlign: 'left', marginBottom: 8 }]}>Quản lý danh sách tập</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                  <TextInput 
+                    style={[styles.input, { flex: 0.3 }]} 
+                    value={newEp.name} 
+                    onChangeText={t => setNewEp({...newEp, name: t})} 
+                    placeholder="Tên tập (1, 2...)" 
+                    placeholderTextColor="#666" 
+                  />
+                  <TextInput 
+                    style={[styles.input, { flex: 0.7 }]} 
+                    value={newEp.link} 
+                    onChangeText={t => setNewEp({...newEp, link: t})} 
+                    placeholder="Link video tập này" 
+                    placeholderTextColor="#666" 
+                  />
+                </View>
+                <Pressable 
+                  style={[styles.uploadBtn, { backgroundColor: COLORS.surface, borderStyle: 'solid' }]} 
+                  onPress={() => {
+                    if (newEp.name && newEp.link) {
+                      setForm({ ...form, episodes: [...form.episodes, { ...newEp }] });
+                      setNewEp({ name: '', link: '' });
+                    }
+                  }}
+                >
+                  <Icons.Plus size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                  <Text style={{ color: COLORS.primary, fontWeight: '700' }}>Thêm tập</Text>
+                </Pressable>
+
+                <View style={{ marginTop: 12 }}>
+                  {form.episodes.map((ep, idx) => (
+                    <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: 8, borderRadius: 4, marginBottom: 4 }}>
+                      <Text style={{ flex: 1, color: COLORS.textPrimary, fontSize: 12 }}>Tập {ep.name}: {ep.link.substring(0, 30)}...</Text>
+                      <Pressable onPress={() => setForm({ ...form, episodes: form.episodes.filter((_, i) => i !== idx) })}>
+                        <Icons.Trash2 size={16} color="#FF6B6B" />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
               <Text style={styles.label}>Link Trailer (YouTube)</Text>
               <TextInput style={styles.input} value={form.trailer_url} onChangeText={t => setForm({...form, trailer_url: t})} placeholderTextColor="#666" placeholder="Trailer link" />
 
@@ -291,7 +359,7 @@ export default function AdminMoviesScreen() {
               <Text style={styles.label}>Ngày phát hành</Text>
               <Pressable 
                 style={[styles.input, { justifyContent: 'center' }]} 
-                onPress={() => setDateModalVisible(true)}
+                onPress={openDatePicker}
               >
                 <Text style={{ color: form.release_date ? COLORS.textPrimary : '#666' }}>
                   {form.release_date || 'Chọn ngày phát hành'}
@@ -316,25 +384,42 @@ export default function AdminMoviesScreen() {
       </Modal>
       <Modal visible={dateModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: 400 }]}>
-            <Text style={styles.modalTitle}>Chọn Năm Phát Hành</Text>
+          <View style={[styles.modalContent, { maxHeight: 500 }]}>
+            <Text style={styles.modalTitle}>
+              {dateStep === 'year' ? 'Chọn Năm' : dateStep === 'month' ? 'Chọn Tháng' : 'Chọn Ngày'}
+            </Text>
             <ScrollView>
-              {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                <Pressable 
-                  key={year} 
-                  style={styles.dateItem} 
-                  onPress={() => {
-                    setForm({ ...form, release_date: `${year}-01-01` });
-                    setDateModalVisible(false);
-                  }}
-                >
+              {dateStep === 'year' && Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                <Pressable key={year} style={styles.dateItem} onPress={() => { setTempDate({ ...tempDate, y: year }); setDateStep('month'); }}>
                   <Text style={styles.dateText}>{year}</Text>
                 </Pressable>
               ))}
+              {dateStep === 'month' && Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                <Pressable key={m} style={styles.dateItem} onPress={() => { setTempDate({ ...tempDate, m: m.toString().padStart(2, '0') }); setDateStep('day'); }}>
+                  <Text style={styles.dateText}>Tháng {m}</Text>
+                </Pressable>
+              ))}
+              {dateStep === 'day' && Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                <Pressable key={d} style={styles.dateItem} onPress={() => { 
+                  const finalD = d.toString().padStart(2, '0');
+                  setForm({ ...form, release_date: `${tempDate.y}-${tempDate.m}-${finalD}` });
+                  setDateModalVisible(false);
+                }}>
+                  <Text style={styles.dateText}>Ngày {d}</Text>
+                </Pressable>
+              ))}
             </ScrollView>
-            <Pressable style={styles.closeBtn} onPress={() => setDateModalVisible(false)}>
-              <Text style={{ color: COLORS.primary, fontWeight: '700' }}>Đóng</Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+              {dateStep !== 'year' && (
+                <Pressable style={styles.closeBtn} onPress={() => setDateStep(dateStep === 'day' ? 'month' : 'year')}>
+                  <Icons.ArrowLeft size={16} color={COLORS.primary} />
+                  <Text style={{ color: COLORS.primary, marginLeft: 5 }}>Quay lại</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.closeBtn} onPress={() => setDateModalVisible(false)}>
+                <Text style={{ color: COLORS.textMuted }}>Đóng</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>

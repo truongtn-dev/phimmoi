@@ -9,23 +9,36 @@ import * as Icons from '../components/common/icons';
 export default function AdminScreen({ navigation }) {
   const { reports } = useReportsContext();
   const { totalComments } = useCommentsContext();
-  const [dbStats, setDbStats] = useState({ movies: 0, users: 0 });
+  const [dbStats, setDbStats] = useState({ movies: 0, users: 0, apiMovies: 0, blocked: 0, categories: 0 });
 
   useEffect(() => {
     const fetchStats = async () => {
-      // Fetch user limits and total movies globally directly using exact count
       const { count: mCount } = await supabase.from('movies').select('*', { count: 'exact', head: true });
       const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-      setDbStats({ movies: mCount || 0, users: uCount || 0 });
+      const { count: bCount } = await supabase.from('blocked_movies').select('*', { count: 'exact', head: true });
+      const { count: cCount } = await supabase.from('categories').select('*', { count: 'exact', head: true });
+      
+      const { getPhimMoiCapNhat } = await import('../services/phimapi');
+      const apiRes = await getPhimMoiCapNhat(1);
+      
+      setDbStats({ 
+        movies: mCount || 0, 
+        users: uCount || 0, 
+        apiMovies: apiRes?.params?.pagination?.totalItems || 1000,
+        blocked: bCount || 0,
+        categories: cCount || 0
+      });
     };
     fetchStats();
   }, []);
 
   const stats = [
-    { icon: <Icons.Film size={28} color="#E50914" />, title: 'Phim cục bộ', count: dbStats.movies, color: '#E50914' },
-    { icon: <Icons.Users size={28} color="#46D369" />, title: 'Người dùng', count: dbStats.users, color: '#46D369' },
-    { icon: <Icons.MessageSquare size={28} color="#1E90FF" />, title: 'Bình luận', count: totalComments, color: '#1E90FF' },
-    { icon: <Icons.AlertTriangle size={28} color="#F5C518" />, title: 'Lỗi phát sinh', count: reports.length, color: '#F5C518' },
+    { icon: <Icons.Film size={26} color="#E50914" />, title: 'Phim cục bộ', count: dbStats.movies, color: '#E50914' },
+    { icon: <Icons.Globe size={26} color="#9C27B0" />, title: 'Thư viện API', count: dbStats.apiMovies, color: '#9C27B0' },
+    { icon: <Icons.Users size={26} color="#46D369" />, title: 'Người dùng', count: dbStats.users, color: '#46D369' },
+    { icon: <Icons.Folder size={26} color="#F5C518" />, title: 'Thể loại', count: dbStats.categories, color: '#F5C518' },
+    { icon: <Icons.MessageSquare size={26} color="#1E90FF" />, title: 'Bình luận', count: totalComments, color: '#1E90FF' },
+    { icon: <Icons.ShieldOff size={26} color="#FF6B6B" />, title: 'Bị chặn', count: dbStats.blocked, color: '#FF6B6B' },
   ];
 
   const adminCards = [

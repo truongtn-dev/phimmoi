@@ -3,7 +3,8 @@ const CDN_IMAGE = "https://phimimg.com";
 
 export const getPhimImageUrl = (path) => {
   if (!path) return "https://via.placeholder.com/300x450";
-  let url = path.startsWith("http") ? path : `${CDN_IMAGE}/${path}`;
+  if (path.startsWith("http")) return path; // Return raw URL if already full link
+  let url = `${CDN_IMAGE}/${path}`;
   // Optimization: use API's WebP converter for faster mobile loading
   return `${BASE_URL}/image.php?url=${encodeURIComponent(url)}`;
 };

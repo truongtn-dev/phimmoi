@@ -47,6 +47,7 @@ export const Globe = (props) => <Feather name="globe" {...mapProps(props)}/>;
 export const HomeIcon = (props) => <Feather name="home" {...mapProps(props)}/>;
 export const EmptyHeart = (props) => <Feather name="heart" {...mapProps(props)}/>;
 export const CheckCircle = (props) => <Feather name="check-circle" {...mapProps(props)}/>;
+export const ShieldOff = (props) => <Feather name="shield-off" {...mapProps(props)}/>;
 
 export const Refresh = (props) => <Feather name="refresh-cw" {...mapProps(props)}/>;
 
@@ -54,7 +55,7 @@ export const Calendar = (props) => <Feather name="calendar" {...mapProps(props)}
 
 export default {
     Search, User, Heart, Menu, X, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, Play, Star, Trash2, Edit, Plus, Film, Users, ImageIcon, Info, Clock, Mail, Lock, Camera, Save, LogOut, Shield, Check, Circle, MoreHorizontal, Dot,
-    MessageSquare, Folder, AlertTriangle, BarChart2, Lightbulb, Flame, Monitor, Sparkles, Radio, Eye, EyeOff, Tag, Globe, HomeIcon, EmptyHeart, CheckCircle, Refresh, Calendar
+    MessageSquare, Folder, AlertTriangle, BarChart2, Lightbulb, Flame, Monitor, Sparkles, Radio, Eye, EyeOff, Tag, Globe, HomeIcon, EmptyHeart, CheckCircle, Refresh, Calendar, ShieldOff
 };
 
 

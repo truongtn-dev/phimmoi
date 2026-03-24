@@ -39,21 +39,20 @@ export default function MovieDetailScreen({ route, navigation }) {
         const { supabase } = await import('../integrations/supabase/client');
         const { data: movie } = await supabase.from('movies').select('*').eq('id', id).single();
         if (movie) {
+          const supabaseEps = (movie.episodes && Array.isArray(movie.episodes) && movie.episodes.length > 0)
+            ? movie.episodes.map(e => ({ name: e.name, slug: 'ep-' + e.name, link_m3u8: e.link }))
+            : [{ name: 'Full', slug: 'full', link_m3u8: movie.video_url }];
+
           return {
             movie: {
               ...movie,
               name: movie.title,
-              slug: movie.id, // Use ID as slug for history/FAV if slug missing
+              slug: movie.id,
               origin_name: movie.title,
-              category: movie.category ? [{ name: movie.category }] : [],
+              category: movie.category ? (Array.isArray(movie.category) ? movie.category : [{ name: movie.category }]) : [],
+              content: movie.description
             },
-            episodes: [{
-              server_data: [{
-                name: 'Full',
-                slug: movie.id,
-                link_m3u8: movie.video_url
-              }]
-            }]
+            episodes: [{ server_data: supabaseEps }]
           };
         }
       }
@@ -185,9 +184,9 @@ export default function MovieDetailScreen({ route, navigation }) {
 
   if (!movie) return <View style={styles.center}><Text style={styles.emptyText}>Không tìm thấy phim</Text></View>;
 
-  const genres = movie.category?.map((c) => c.name).join(', ') || '';
-  const countries = movie.country?.map((c) => c.name).join(', ') || '';
-  const content = (movie.content || '').replace(/<[^>]*>/g, '');
+  const genres = Array.isArray(movie.category) ? movie.category.map((c) => c.name).join(', ') : (movie.category || '');
+  const countries = Array.isArray(movie.country) ? movie.country.map((c) => c.name).join(', ') : (movie.country || '');
+  const content = (movie.content || movie.description || '').replace(/<[^>]*>/g, '');
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -226,7 +225,11 @@ export default function MovieDetailScreen({ route, navigation }) {
               Alert.alert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để xem phim.', [{ text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }, { text: 'Hủy' }]);
               return;
             }
-            navigation.navigate('Watch', { slug: movie.slug });
+            if (isSupabase) {
+              navigation.navigate('Watch', { id: movie.id, isSupabase: true });
+            } else {
+              navigation.navigate('Watch', { slug: movie.slug });
+            }
           }} style={{ flex: 1 }} />
           <Pressable style={[styles.iconBtn, fav && styles.iconBtnActive]} onPress={handleFav}>
             <View style={styles.iconBtnText}>{fav ? <Icons.Heart size={24} color="#E50914" /> : <Icons.EmptyHeart size={24} color="#fff" />}</View>

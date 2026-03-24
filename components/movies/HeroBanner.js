@@ -8,7 +8,7 @@ const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function HeroBanner({ movie, onPlay, onInfo }) {
   if (!movie) return null;
-  const imgUri = getPhimImageUrl(movie?.poster_url || movie?.thumb_url);
+  const imgUri = getPhimImageUrl(movie?.backdrop_url || movie?.poster_url || movie?.thumb_url);
 
   return (
     <View style={styles.container}>
