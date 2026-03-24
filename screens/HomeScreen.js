@@ -2,11 +2,11 @@ import React from 'react';
 import { View, ScrollView, StyleSheet, StatusBar, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getPhimMoiCapNhat, getPhimList } from '../services/phimapi';
-import HeroBanner from '../components/HeroBanner';
-import CategoryRow from '../components/CategoryRow';
-import { BannerSkeleton } from '../components/SkeletonLoader';
+import HeroBanner from '../components/movies/HeroBanner';
+import CategoryRow from '../components/movies/CategoryRow';
+import { BannerSkeleton } from '../components/common/SkeletonLoader';
 import { COLORS, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function HomeScreen({ navigation }) {
   const newMovies = useQuery({ queryKey: ['phim-moi'], queryFn: () => getPhimMoiCapNhat(1) });
@@ -94,3 +94,4 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
 });
+

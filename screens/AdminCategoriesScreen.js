@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
 import { supabase } from '../integrations/supabase/client';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function AdminCategoriesScreen() {
   const [categories, setCategories] = useState([]);
@@ -157,3 +157,4 @@ const styles = StyleSheet.create({
   modalFooter: { flexDirection: 'row', marginTop: SPACING.xl, justifyContent: 'flex-end' },
   modalBtn: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: RADIUS.md },
 });
+

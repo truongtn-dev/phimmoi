@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../integrations/supabase/client';
-import InputField from '../components/InputField';
-import GradientButton from '../components/GradientButton';
+import InputField from '../components/common/InputField';
+import GradientButton from '../components/common/GradientButton';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -125,3 +125,4 @@ const styles = StyleSheet.create({
   linkText: { color: COLORS.textSecondary, fontSize: FONT.sm },
   linkBold: { color: COLORS.primary, fontWeight: '700' },
 });
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, Modal, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { supabase } from '../integrations/supabase/client';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function AdminMoviesScreen() {
   const [movies, setMovies] = useState([]);
@@ -177,3 +177,4 @@ const styles = StyleSheet.create({
   chipText: { color: COLORS.textSecondary, fontSize: FONT.sm },
   chipTextActive: { color: '#fff', fontWeight: '700' },
 });
+

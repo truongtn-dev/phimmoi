@@ -1,118 +1,239 @@
-import React, { useState, useMemo } from 'react';
-import { View, TextInput, FlatList, StyleSheet, Text, Pressable, ScrollView } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, TextInput, FlatList, StyleSheet, Text, Pressable, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { searchPhim, getPhimByCategory, PHIM_CATEGORIES } from '../services/phimapi';
-import MovieCard from '../components/MovieCard';
-import { MovieCardSkeleton } from '../components/SkeletonLoader';
+import MovieCard from '../components/movies/MovieCard';
+import { MovieCardSkeleton } from '../components/common/SkeletonLoader';
 import useDebounce from '../hooks/useDebounce';
 import { COLORS, RADIUS, FONT, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
+
+const { width: SW } = Dimensions.get('window');
+const CARD_W = (SW - SPACING.lg * 2 - SPACING.md) / 2;
+const PAGE_SIZE = 20;
 
 export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
-  const [selectedCat, setSelectedCat] = useState(null);
-  const debouncedQuery = useDebounce(query, 300);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [page, setPage] = useState(1);
+  const debouncedQuery = useDebounce(query, 500);
 
-  const searchResults = useQuery({ queryKey: ['phim-search', debouncedQuery], queryFn: () => searchPhim(debouncedQuery), enabled: !!debouncedQuery });
-  const catResults = useQuery({ queryKey: ['phim-cat', selectedCat], queryFn: () => getPhimByCategory(selectedCat), enabled: !!selectedCat });
+  // Reset page when category or search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, selectedCategory]);
 
-  const movies = debouncedQuery ? (searchResults.data?.data?.items ?? []) : selectedCat ? (catResults.data?.data?.items ?? []) : [];
-  const isLoading = debouncedQuery ? searchResults.isLoading : catResults.isLoading;
+  const moviesQuery = useQuery({
+    queryKey: ['phim-search', debouncedQuery, selectedCategory, page],
+    queryFn: () => {
+      if (debouncedQuery.trim()) {
+        return searchPhim(debouncedQuery, page, PAGE_SIZE);
+      }
+      if (selectedCategory) {
+        return getPhimByCategory(selectedCategory, page, PAGE_SIZE);
+      }
+      return null;
+    },
+    enabled: !!(debouncedQuery.trim() || selectedCategory),
+  });
+
+  const responseData = moviesQuery.data;
+  const items = responseData?.data?.items || responseData?.items || [];
+  const totalPages = responseData?.data?.params?.pagination?.totalPages || 10; // Fallback to 10 if not in API
+
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(p => p + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (page > 1) setPage(p => p - 1);
+  };
+
+  const renderPagination = () => {
+    if (items.length === 0 || moviesQuery.isLoading) return null;
+    return (
+      <View style={styles.pagination}>
+        <Pressable 
+          onPress={handlePrevPage} 
+          disabled={page === 1}
+          style={[styles.pageBtn, page === 1 && { opacity: 0.3 }]}
+        >
+          <Icons.ChevronLeft size={20} color="#fff" />
+          <Text style={styles.pageBtnText}>Trang trước</Text>
+        </Pressable>
+        
+        <View style={styles.pageIndicator}>
+          <Text style={styles.pageIndicatorText}>Trang {page}</Text>
+        </View>
+
+        <Pressable 
+          onPress={handleNextPage} 
+          style={styles.pageBtn}
+        >
+          <Text style={styles.pageBtnText}>Trang sau</Text>
+          <Icons.ChevronRight size={20} color="#fff" />
+        </Pressable>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBar}>
-        <View style={styles.searchIcon}><Icons.Search size={18} color={COLORS.textMuted} /></View>
-        <TextInput
-          placeholder="Tìm kiếm phim..."
-          placeholderTextColor={COLORS.textMuted}
-          value={query}
-          onChangeText={setQuery}
-          style={styles.input}
-        />
+      <View style={styles.header}>
+        <View style={styles.searchBar}>
+          <Icons.Search size={20} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tìm kiếm phim..."
+            placeholderTextColor={COLORS.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            autoFocus={false}
+          />
+          {query ? (
+            <Pressable onPress={() => setQuery('')}>
+              <Icons.X size={18} color={COLORS.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.categoryScroll}
+          contentContainerStyle={{ paddingRight: 40 }}
+        >
+          <Pressable
+            style={[styles.chip, !selectedCategory && styles.chipActive]}
+            onPress={() => setSelectedCategory(null)}
+          >
+            <Text style={[styles.chipText, !selectedCategory && styles.chipTextActive]}>Tất cả</Text>
+          </Pressable>
+          {PHIM_CATEGORIES.map((cat) => (
+            <Pressable
+              key={cat.slug}
+              style={[styles.chip, selectedCategory === cat.slug && styles.chipActive]}
+              onPress={() => {
+                setSelectedCategory(cat.slug);
+                setQuery('');
+              }}
+            >
+              <Text style={[styles.chipText, selectedCategory === cat.slug && styles.chipTextActive]}>
+                {cat.name}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll} contentContainerStyle={styles.catContent}>
-        {PHIM_CATEGORIES.map((cat) => (
-          <Pressable
-            key={cat.slug}
-            onPress={() => { setSelectedCat(cat.slug === selectedCat ? null : cat.slug); setQuery(''); }}
-            style={[styles.chip, selectedCat === cat.slug && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, selectedCat === cat.slug && styles.chipTextActive]}>{cat.name}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {isLoading ? (
-        <View style={styles.grid}>
-          {[1, 2, 3, 4, 5, 6].map((i) => <MovieCardSkeleton key={i} />)}
-        </View>
-      ) : movies.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <View style={{marginBottom:SPACING.md}}><Icons.Film size={48} color={COLORS.border} /></View>
-          <Text style={styles.emptyText}>{debouncedQuery || selectedCat ? 'Không tìm thấy kết quả' : 'Tìm kiếm phim yêu thích'}</Text>
+      {moviesQuery.isLoading ? (
+        <FlatList
+          data={[1, 2, 3, 4, 5, 6]}
+          numColumns={2}
+          keyExtractor={(i) => String(i)}
+          renderItem={() => <MovieCardSkeleton />}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={{ padding: SPACING.lg }}
+        />
+      ) : items.length === 0 ? (
+        <View style={styles.center}>
+          {!(debouncedQuery || selectedCategory) ? (
+            <>
+              <Icons.Search size={64} color={COLORS.card} />
+              <Text style={styles.emptyText}>Nhập tên phim hoặc chọn thể loại</Text>
+            </>
+          ) : (
+            <>
+              <Icons.Info size={64} color={COLORS.card} />
+              <Text style={styles.emptyText}>Không tìm thấy phim nào phù hợp</Text>
+            </>
+          )}
         </View>
       ) : (
         <FlatList
-          data={movies}
+          data={items}
           numColumns={2}
-          keyExtractor={(i) => i._id || i.slug}
-          columnWrapperStyle={styles.gridRow}
+          keyExtractor={(item) => item.slug + '-' + Math.random()}
           renderItem={({ item }) => (
-            <MovieCard
-              movie={item}
-              width={CARD_W}
-              onPress={() => navigation.navigate('MovieDetail', { slug: item.slug })}
+            <MovieCard 
+              movie={item} 
+              width={CARD_W} 
+              onPress={() => navigation.navigate('MovieDetail', { slug: item.slug })} 
             />
           )}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={{ paddingBottom: 60 }}
+          ListFooterComponent={renderPagination}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
         />
       )}
     </View>
   );
 }
 
-const CARD_W = (require('react-native').Dimensions.get('window').width - SPACING.lg * 2 - SPACING.md) / 2;
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  header: { 
+    backgroundColor: COLORS.background, 
+    paddingTop: SPACING.sm, 
+    paddingHorizontal: SPACING.lg, 
+    borderBottomWidth: 0.5, 
+    borderBottomColor: 'rgba(255,255,255,0.05)' 
+  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.inputBg,
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
+    backgroundColor: COLORS.surface,
     borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.md,
+    height: 48,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: SPACING.sm,
   },
-  searchIcon: { fontSize: 18, marginRight: SPACING.sm },
-  input: { flex: 1, color: COLORS.textPrimary, fontSize: FONT.md, paddingVertical: 12 },
-  catScroll: { marginTop: SPACING.md, maxHeight: 54 },
-  catContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm, alignItems: 'center' },
-  chip: { 
-    paddingHorizontal: 18, 
-    paddingVertical: 9, 
-    borderRadius: RADIUS.full, 
-    backgroundColor: 'rgba(255,255,255,0.05)', 
-    borderWidth: 1, 
-    borderColor: 'rgba(255,255,255,0.12)',
+  searchInput: { flex: 1, color: COLORS.textPrimary, fontSize: FONT.md, height: '100%' },
+  categoryScroll: { marginTop: SPACING.md, marginBottom: SPACING.sm },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.surface,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  chipActive: { 
-    backgroundColor: COLORS.primary, 
-    borderColor: COLORS.primary,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  chipText: { color: COLORS.textSecondary, fontSize: FONT.sm, fontWeight: '500' },
+  chipTextActive: { color: '#fff', fontWeight: '700' },
+  row: { paddingHorizontal: SPACING.lg, gap: SPACING.md, marginBottom: SPACING.md },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
+  emptyText: { color: COLORS.textSecondary, fontSize: FONT.md, marginTop: SPACING.md, textAlign: 'center' },
+  pagination: { 
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginTop: SPACING.lg, 
+    marginBottom: 40, 
+    gap: SPACING.sm 
   },
-  chipText: { color: '#9E9E9E', fontSize: FONT.sm, fontWeight: '600', letterSpacing: 0.3 },
-  chipTextActive: { color: '#FFFFFF', fontWeight: '800' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', padding: SPACING.lg, gap: SPACING.md },
-  gridRow: { gap: SPACING.md, paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
-  emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
-  emptyIcon: { fontSize: 48, marginBottom: SPACING.md },
-  emptyText: { color: COLORS.textSecondary, fontSize: FONT.md },
+  pageBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: COLORS.surface, 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  pageBtnText: { color: '#fff', fontSize: FONT.sm, fontWeight: '600', marginHorizontal: 4 },
+  pageIndicator: { 
+    minWidth: 80, 
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 10,
+    borderRadius: RADIUS.sm,
+  },
+  pageIndicatorText: { color: COLORS.textPrimary, fontSize: FONT.sm, fontWeight: 'bold' },
 });
+

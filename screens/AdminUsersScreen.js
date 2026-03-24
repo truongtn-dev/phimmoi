@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, Pressable, 
 import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function AdminUsersScreen() {
   const [users, setUsers] = useState([]);
@@ -228,3 +228,4 @@ const styles = StyleSheet.create({
   roleBtnActiveUser: { backgroundColor: '#46D369', borderColor: '#46D369' },
   roleBtnText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: FONT.md },
 });
+

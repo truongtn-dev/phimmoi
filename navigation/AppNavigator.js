@@ -21,7 +21,7 @@ import AdminCommentsScreen from '../screens/AdminCommentsScreen';
 import AdminMoviesScreen from '../screens/AdminMoviesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import AdminCategoriesScreen from '../screens/AdminCategoriesScreen';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -96,3 +96,4 @@ const loadStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' },
   text: { color: COLORS.textSecondary, marginTop: 12, fontSize: FONT.sm },
 });
+

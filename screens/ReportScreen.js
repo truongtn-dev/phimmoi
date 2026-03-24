@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Pressable, Alert } from 'react-native
 import { useReportsContext } from '../context/ReportsContext';
 import { useAuth } from '../context/AuthContext';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import { CheckCircle } from '../components/common/icons';
 
 export default function ReportScreen({ navigation }) {
   const { reports, deleteReport } = useReportsContext();
@@ -33,7 +33,7 @@ export default function ReportScreen({ navigation }) {
       
       {isAdmin && (
         <Pressable onPress={() => handleDelete(item.id)} style={styles.btnAction}>
-          <Icons.CheckCircle size={24} color="#46D369" />
+          <CheckCircle size={24} color="#46D369" />
         </Pressable>
       )}
     </View>
@@ -43,7 +43,7 @@ export default function ReportScreen({ navigation }) {
     <View style={styles.container}>
       {filteredReports.length === 0 ? (
         <View style={styles.center}>
-          <Icons.CheckCircle size={48} color={COLORS.textMuted} style={{marginBottom: SPACING.md}}/>
+          <CheckCircle size={48} color={COLORS.textMuted} style={{marginBottom: SPACING.md}}/>
           <Text style={styles.empty}>{isAdmin ? "Tuyệt vời! Không có báo cáo lỗi nào." : "Bạn chưa báo cáo bộ phim nào."}</Text>
         </View>
       ) : (
@@ -71,3 +71,4 @@ const styles = StyleSheet.create({
   meta: { color: COLORS.textMuted, fontSize: FONT.xs },
   btnAction: { marginLeft: SPACING.md, padding: SPACING.sm, backgroundColor: 'rgba(70,211,105,0.1)', borderRadius: RADIUS.sm },
 });
+

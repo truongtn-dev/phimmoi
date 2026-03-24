@@ -1,32 +1,78 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { getPhimDetail, getPhimMoiCapNhat, getPhimImageUrl } from '../services/phimapi';
+import { getPhimDetail, getPhimMoiCapNhat } from '../services/phimapi';
 import useWatchHistory from '../hooks/useWatchHistory';
-import CategoryRow from '../components/CategoryRow';
+import CategoryRow from '../components/movies/CategoryRow';
 import { COLORS, RADIUS, FONT, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
-
-import { Alert } from 'react-native';
+import { Film, Tag, Monitor, ChevronLeft } from '../components/common/icons';
 import { useAuth } from '../context/AuthContext';
 
-function PlayerView({ url, onPause }) {
-  const player = useVideoPlayer(url);
-  React.useEffect(() => { if (player) player.play(); }, [player]);
-  
-  // Save progress when user pauses
-  React.useEffect(() => {
+function PlayerView({ url, onUpdate, initialTime }) {
+  const updateRef = useRef(onUpdate);
+  updateRef.current = onUpdate;
+
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = false;
+    p.play();
+  });
+
+  const seekDone = useRef(false);
+
+  useEffect(() => {
+    if (!player || initialTime <= 0) return;
+
+    const performSeek = () => {
+      if (seekDone.current) return;
+      try {
+        // Android expo-video v3 seek workaround
+        player.currentTime = initialTime;
+        
+        // Some Android devices need multiple attempts as buffer fills
+        const current = player.currentTime || 0;
+        if (Math.abs(current - initialTime) < 5) {
+          seekDone.current = true;
+        }
+      } catch (e) {}
+    };
+
+    // Retry aggressively every 500ms for the first 5 seconds
+    const interval = setInterval(performSeek, 500);
+    const timeout = setTimeout(() => clearInterval(interval), 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [player, initialTime]);
+
+  useEffect(() => {
     if (!player) return;
-    const subscription = player.addListener('playingChange', (isPlaying) => {
-      if (!isPlaying && onPause) {
-         onPause(player.currentTime);
-      }
+    const sub = player.addListener('playingChange', (isPlaying) => {
+      try {
+        if (player.status === 'readyToPlay') {
+          updateRef.current(player.currentTime, player.duration);
+        }
+      } catch (e) {}
     });
     return () => {
-      subscription.remove();
+      try {
+        sub.remove();
+      } catch (e) {}
     };
-  }, [player, onPause]);
+  }, [player]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        if (player && player.status === 'readyToPlay' && player.playing) {
+          updateRef.current(player.currentTime, player.duration);
+        }
+      } catch (e) {}
+    }, 10000); 
+    return () => clearInterval(interval);
+  }, [player]);
 
   return <VideoView style={styles.videoPlayer} player={player} allowsFullscreen allowsPictureInPicture />;
 }
@@ -36,69 +82,91 @@ export default function WatchScreen({ route, navigation }) {
   const { slug } = route.params || {};
   const { data, isLoading } = useQuery({ queryKey: ['phim-watch', slug], queryFn: () => getPhimDetail(slug), enabled: !!slug });
   const suggested = useQuery({ queryKey: ['suggested'], queryFn: () => getPhimMoiCapNhat(1) });
-  const { saveProgress, getProgress } = useWatchHistory();
+  const { saveProgress, getProgress, isLoaded } = useWatchHistory();
 
   const [currentVideoUrl, setCurrentVideoUrl] = useState(null);
   const [currentEpName, setCurrentEpName] = useState('');
+  const [initialSeek, setInitialSeek] = useState(0);
 
   const movie = data?.movie;
   const episodes = data?.episodes ?? [];
   const currentServer = episodes[0];
   const visibleEps = currentServer?.server_data?.slice(0, 50) ?? [];
 
-  React.useEffect(() => {
-    if (movie && visibleEps.length > 0 && !currentVideoUrl) {
+  useEffect(() => {
+    // WAITING FOR: movie data, episode list, AND watch history load
+    if (movie && visibleEps.length > 0 && isLoaded && !currentVideoUrl) {
       const historyEntry = getProgress(movie.slug);
       let targetEp = visibleEps[0];
+      let resumeTime = 0;
+
       if (historyEntry && historyEntry.episode) {
-        const found = visibleEps.find(e => e.name === historyEntry.episode);
-        if (found) targetEp = found;
+        // Fuzzy match: check name or extracted number to handle 'Tap 1' vs 'Tap 01'
+        const getNum = (s) => (s.toString().match(/\d+/) || [null])[0];
+        const targetNum = getNum(historyEntry.episode);
+
+        const found = visibleEps.find(e => {
+          if (e.name === historyEntry.episode) return true;
+          if (targetNum && getNum(e.name) === targetNum) return true;
+          return false;
+        });
+
+        if (found) {
+          targetEp = found;
+          resumeTime = historyEntry.progress || 0;
+        }
       }
       setCurrentVideoUrl(targetEp.link_m3u8);
       setCurrentEpName(targetEp.name);
+      setInitialSeek(resumeTime);
     }
-  }, [movie, visibleEps, currentVideoUrl, getProgress]);
-  const content = (movie?.content || '').replace(/<[^>]*>/g, '');
-  const genres = movie?.category?.map((c) => c.name).join(', ') || '';
+  }, [movie, visibleEps, currentVideoUrl, getProgress, isLoaded]);
 
-  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
-  if (!movie) return <View style={styles.center}><Text style={styles.emptyText}>Không tìm thấy phim</Text></View>;
+  // STABLE Update function
+  const handleUpdate = React.useCallback((time, duration) => {
+    if (movie && currentEpName && time > 0) {
+      saveProgress(movie, currentEpName, time, duration);
+    }
+  }, [movie, currentEpName, saveProgress]);
 
   const handleSelectEp = (item) => {
     setCurrentVideoUrl(item.link_m3u8);
     setCurrentEpName(item.name);
-    saveProgress(movie, item.name, 0.1);
+    setInitialSeek(0); // Mới chọn tập thì xem từ đầu
+    saveProgress(movie, item.name, 0, 0);
   };
 
-  const handlePause = (currentTime) => {
-    if (movie && currentEpName) {
-      saveProgress(movie, currentEpName, currentTime);
-    }
-  };
+  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
+  if (!movie) return <View style={styles.center}><Text style={styles.emptyText}>Không tìm thấy phim</Text></View>;
 
-  const handleSelectSuggested = (item) => {
-    if (!user) {
-      Alert.alert('Yêu cầu báo danh', 'Vui lòng đăng nhập để xem phim.', [{ text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }, { text: 'Hủy' }]);
-      return;
-    }
-    navigation.push('Watch', { slug: item.slug });
-  };
+  const content = (movie?.content || '').replace(/<[^>]*>/g, '');
+  const genres = movie?.category?.map((c) => c.name).join(', ') || '';
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.heading} numberOfLines={1}>{movie.name} {currentEpName ? `- ${currentEpName}` : ''}</Text>
+      <View style={{flexDirection:'row', alignItems:'center', marginBottom: SPACING.md}}>
+        <Pressable onPress={() => navigation.goBack()} style={{padding: 4, marginRight: 8}}><ChevronLeft size={24} color="#fff"/></Pressable>
+        <Text style={[styles.heading, {marginBottom:0}]} numberOfLines={1}>{movie.name}</Text>
+      </View>
 
       {currentVideoUrl ? (
-        <PlayerView url={currentVideoUrl} onPause={handlePause} />
+        <PlayerView 
+          key={currentVideoUrl} // Reset player component when URL changes
+          url={currentVideoUrl} 
+          initialTime={initialSeek} 
+          onUpdate={handleUpdate} 
+        />
       ) : (
         <View style={styles.videoPlaceholder}>
-          <View style={styles.placeholderIcon}><Icons.Film size={48} color={COLORS.border} /></View>
+          <Film size={48} color={COLORS.border} />
           <Text style={styles.placeholderText}>Chọn tập phim bên dưới để xem</Text>
         </View>
       )}
 
       {/* Episode Grid */}
-      <Text style={styles.sectionTitle}>Danh sách tập ({visibleEps.length})</Text>
+      <Text style={[styles.sectionTitle, {marginTop: SPACING.lg}]}>
+        Đang phát: <Text style={{color: COLORS.primary}}>{currentEpName}</Text>
+      </Text>
       <View style={styles.epGrid}>
         {visibleEps.map((item) => {
           const active = currentVideoUrl === item.link_m3u8;
@@ -113,20 +181,18 @@ export default function WatchScreen({ route, navigation }) {
       {/* Movie Info */}
       {(genres || content) && (
         <View style={styles.infoSection}>
-          {genres ? <View style={{flexDirection:'row',alignItems:'center'}}><Icons.Tag size={16} color={COLORS.textSecondary} style={{marginRight:6}} /><Text style={styles.genresText}>{genres}</Text></View> : null}
+          {genres ? <View style={{flexDirection:'row',alignItems:'center'}}><Tag size={16} color={COLORS.textSecondary} style={{marginRight:6}} /><Text style={styles.genresText}>{genres}</Text></View> : null}
           {content ? <Text style={styles.descText} numberOfLines={5}>{content}</Text> : null}
         </View>
       )}
 
       {/* Suggested Movies */}
       <CategoryRow
-        title="Phim Đề Xuất" icon={<Icons.Monitor size={20} color="#1E90FF" />}
+        title="Phim Đề Xuất" icon={<Monitor size={20} color="#1E90FF" />}
         movies={suggested.data?.items?.slice(0, 15)}
         isLoading={suggested.isLoading}
-        onMoviePress={handleSelectSuggested}
+        onMoviePress={(item) => navigation.push('Watch', { slug: item.slug })}
       />
-
-      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -150,3 +216,4 @@ const styles = StyleSheet.create({
   genresText: { color: COLORS.textSecondary, fontSize: FONT.sm, marginBottom: SPACING.sm },
   descText: { color: COLORS.textMuted, fontSize: FONT.sm, lineHeight: 20 },
 });
+

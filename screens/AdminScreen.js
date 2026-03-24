@@ -4,7 +4,7 @@ import { supabase } from '../integrations/supabase/client';
 import { useReportsContext } from '../context/ReportsContext';
 import { useCommentsContext } from '../context/CommentsContext';
 import { COLORS, FONT, SPACING, RADIUS } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function AdminScreen({ navigation }) {
   const { reports } = useReportsContext();
@@ -94,3 +94,4 @@ const styles = StyleSheet.create({
   arrow: { color: COLORS.textMuted, fontSize: 28, fontWeight: '300' },
   note: { color: COLORS.textMuted, fontSize: FONT.xs, marginTop: SPACING.xl, textAlign: 'center' },
 });
+

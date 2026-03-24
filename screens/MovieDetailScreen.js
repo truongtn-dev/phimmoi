@@ -7,10 +7,10 @@ import { useCommentsContext } from '../context/CommentsContext';
 import { useReportsContext } from '../context/ReportsContext';
 import useWatchHistory from '../hooks/useWatchHistory';
 import { useAuth } from '../context/AuthContext';
-import GradientButton from '../components/GradientButton';
-import SkeletonLoader from '../components/SkeletonLoader';
+import GradientButton from '../components/common/GradientButton';
+import SkeletonLoader from '../components/common/SkeletonLoader';
 import { COLORS, RADIUS, FONT, SPACING } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 const { width: SW } = Dimensions.get('window');
 const REPORT_REASONS = ['Video không phát', 'Link hỏng', 'Sai phụ đề', 'Chất lượng kém', 'Khác'];
@@ -248,3 +248,4 @@ const styles = StyleSheet.create({
   reportInput: { backgroundColor: COLORS.inputBg, color: COLORS.textPrimary, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.md, minHeight: 60, fontSize: FONT.sm, textAlignVertical: 'top' },
   modalActions: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.lg },
 });
+

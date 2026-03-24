@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../integrations/supabase/client';
-import InputField from '../components/InputField';
-import GradientButton from '../components/GradientButton';
+import InputField from '../components/common/InputField';
+import GradientButton from '../components/common/GradientButton';
 import { COLORS, FONT, SPACING, RADIUS } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -50,20 +50,16 @@ export default function LoginScreen({ navigation }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.headerWrap}>
-          <View style={{alignItems:'center', marginBottom: SPACING.md}}>
+          <View style={{ alignItems: 'center', marginBottom: SPACING.md }}>
             <Icons.Film size={64} color={COLORS.primary} />
           </View>
           <Text style={styles.title}>Đăng Nhập</Text>
-          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'center',marginTop:20}}>
-            <Icons.Lightbulb size={16} color={COLORS.textMuted}/>
-            <Text style={[styles.roleHintText,{marginTop:0,marginLeft:4}]}>Admin: set role="admin" in Supabase user_metadata</Text>
-          </View>
         </View>
 
         {globalError ? (
           <View style={styles.errorBanner}>
-            <View style={{flexDirection:'row',alignItems:'center'}}>
-              <Icons.AlertTriangle size={16} color="#fff" style={{marginRight:8}}/>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icons.AlertTriangle size={16} color="#fff" style={{ marginRight: 8 }} />
               <Text style={styles.errorBannerText}>{globalError}</Text>
             </View>
           </View>
@@ -96,7 +92,7 @@ export default function LoginScreen({ navigation }) {
               style={styles.eyeBtn}
             >
               <View style={styles.eyeText}>
-                {showPassword ? <Icons.EyeOff size={20} color={COLORS.textSecondary}/> : <Icons.Eye size={20} color={COLORS.textSecondary}/>}
+                {showPassword ? <Icons.EyeOff size={20} color={COLORS.textSecondary} /> : <Icons.Eye size={20} color={COLORS.textSecondary} />}
               </View>
             </Pressable>
           </View>
@@ -122,9 +118,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: SPACING.xl, justifyContent: 'center' },
   content: { flexGrow: 1, justifyContent: 'center', padding: SPACING.xl },
   headerWrap: { alignItems: 'center', marginBottom: SPACING.xxxl },
-  logo: { fontSize: 56 }, // This style is no longer used but kept as it wasn't explicitly removed
+  logo: { fontSize: 56 },
   title: { fontSize: FONT.hero, color: COLORS.textPrimary, fontWeight: '800', textAlign: 'center', marginBottom: SPACING.sm },
-  subtitle: { color: COLORS.textSecondary, fontSize: FONT.sm, marginTop: SPACING.xs }, // This style is no longer used but kept as it wasn't explicitly removed
+  subtitle: { color: COLORS.textSecondary, fontSize: FONT.sm, marginTop: SPACING.xs },
   errorBanner: { backgroundColor: 'rgba(229,9,20,0.15)', borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.lg, borderWidth: 1, borderColor: COLORS.primary },
   errorBannerText: { color: COLORS.primary, fontSize: FONT.sm, textAlign: 'center' },
   eyeBtn: { position: 'absolute', right: 14, top: 38, zIndex: 1 },
@@ -136,3 +132,4 @@ const styles = StyleSheet.create({
   roleHint: { marginTop: SPACING.xxxl, alignItems: 'center' },
   roleHintText: { color: COLORS.textMuted, fontSize: FONT.xs, textAlign: 'center' },
 });
+

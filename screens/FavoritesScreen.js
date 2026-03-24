@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { useFavoritesContext } from '../context/FavoritesContext';
-import MovieCard from '../components/MovieCard';
+import MovieCard from '../components/movies/MovieCard';
 import { COLORS, FONT, SPACING } from '../constants/theme';
 import { Dimensions } from 'react-native';
 
@@ -45,3 +45,4 @@ const styles = StyleSheet.create({
   emptyTitle: { color: COLORS.textPrimary, fontSize: FONT.xl, fontWeight: '700' },
   emptySub: { color: COLORS.textSecondary, fontSize: FONT.sm, marginTop: SPACING.sm, textAlign: 'center' },
 });
+

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useCommentsContext } from '../context/CommentsContext';
 import { COLORS, FONT, SPACING, RADIUS } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function AdminCommentsScreen() {
   const { allComments, deleteComment } = useCommentsContext();
@@ -68,3 +68,4 @@ const styles = StyleSheet.create({
   deleteBtn: { padding: 8 },
   body: { color: COLORS.textSecondary, fontSize: FONT.sm, lineHeight: 20 },
 });
+

@@ -20,3 +20,4 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   if (!ready) return <View />;
   return children;
 }
+

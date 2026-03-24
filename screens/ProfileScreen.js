@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-nati
 import { useAuth } from '../context/AuthContext';
 import { useFavoritesContext } from '../context/FavoritesContext';
 import { COLORS, FONT, SPACING, RADIUS } from '../constants/theme';
-import * as Icons from '../components/ui/icons';
+import * as Icons from '../components/common/icons';
 
 export default function ProfileScreen({ navigation }) {
   const { user, isAdmin, signOut } = useAuth();
@@ -98,3 +98,4 @@ const styles = StyleSheet.create({
   logoutText: { color: '#fff', fontSize: FONT.md, fontWeight: '700' },
   version: { color: COLORS.textMuted, textAlign: 'center', marginTop: SPACING.xl, fontSize: FONT.xs },
 });
+
