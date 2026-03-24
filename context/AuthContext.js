@@ -6,18 +6,21 @@ const AuthContext = createContext(undefined);
 export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState('user');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setRole(session?.user?.user_metadata?.role || 'user');
       setLoading(false);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setRole(session?.user?.user_metadata?.role || 'user');
       setLoading(false);
     });
 
@@ -25,7 +28,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signUp = async (email, password, name) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password, options: { data: { name, role: 'user' } } });
     if (error) throw error;
   };
 
@@ -39,8 +42,10 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  const isAdmin = role === 'admin';
+
   return (
-    <AuthContext.Provider value={{ session, user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, user, loading, role, isAdmin, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

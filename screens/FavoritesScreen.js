@@ -1,28 +1,47 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../integrations/supabase/client';
-import { useAuth } from '../context/AuthContext';
+import { useFavoritesContext } from '../context/FavoritesContext';
 import MovieCard from '../components/MovieCard';
+import { COLORS, FONT, SPACING } from '../constants/theme';
+import { Dimensions } from 'react-native';
+
+const CARD_W = (Dimensions.get('window').width - SPACING.lg * 2 - SPACING.md) / 2;
 
 export default function FavoritesScreen({ navigation }) {
-  const { user } = useAuth();
+  const { favorites } = useFavoritesContext();
 
-  const { data: favorites, isLoading } = useQuery(['favorites', user?.id], async () => {
-    if (!user) return [];
-    const { data, error } = await supabase.from('favorites').select('*, movies(*)').eq('user_id', user.id);
-    if (error) throw error;
-    return data;
-  }, { enabled: !!user });
-
-  const list = favorites?.map((f) => f.movies).filter(Boolean) ?? [];
+  if (!favorites.length) {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyIcon}>🤍</Text>
+        <Text style={styles.emptyTitle}>Chưa có phim yêu thích</Text>
+        <Text style={styles.emptySub}>Thêm phim vào danh sách để xem lại nhanh hơn</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Favorites</Text>
-      <FlatList data={list} keyExtractor={(i) => i._id ?? i.id} renderItem={({ item }) => <MovieCard movie={item} onPress={() => navigation.navigate('MovieDetail', { slug: item.slug })} />} />
+      <FlatList
+        data={favorites}
+        numColumns={2}
+        keyExtractor={(item) => item.slug}
+        columnWrapperStyle={styles.row}
+        renderItem={({ item }) => (
+          <MovieCard movie={item} width={CARD_W} onPress={() => navigation.navigate('MovieDetail', { slug: item.slug })} />
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40, paddingTop: SPACING.md }}
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({ container: { flex: 1, padding: 16 }, heading: { fontSize: 20, fontWeight: '700', marginBottom: 8 } });
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  row: { gap: SPACING.md, paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
+  empty: { flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center', padding: SPACING.xl },
+  emptyIcon: { fontSize: 56, marginBottom: SPACING.lg },
+  emptyTitle: { color: COLORS.textPrimary, fontSize: FONT.xl, fontWeight: '700' },
+  emptySub: { color: COLORS.textSecondary, fontSize: FONT.sm, marginTop: SPACING.sm, textAlign: 'center' },
+});

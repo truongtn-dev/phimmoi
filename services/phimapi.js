@@ -2,13 +2,20 @@ const BASE_URL = "https://phimapi.com";
 const CDN_IMAGE = "https://phimimg.com";
 
 export const getPhimImageUrl = (path) => {
-  if (!path) return "/placeholder.svg";
-  if (path.startsWith("http")) return path;
-  return `${CDN_IMAGE}/${path}`;
+  if (!path) return "https://via.placeholder.com/300x450";
+  let url = path.startsWith("http") ? path : `${CDN_IMAGE}/${path}`;
+  // Optimization: use API's WebP converter for faster mobile loading
+  return `${BASE_URL}/image.php?url=${encodeURIComponent(url)}`;
 };
 
 export const getPhimList = (type = "phim-bo", page = 1, limit = 20) =>
   fetch(`${BASE_URL}/v1/api/danh-sach/${type}?page=${page}&limit=${limit}&sort_field=modified.time&sort_type=desc`).then((r) => {
+    if (!r.ok) throw new Error(`PhimAPI error: ${r.status}`);
+    return r.json();
+  });
+
+export const getPhimMoiCapNhat = (page = 1) =>
+  fetch(`${BASE_URL}/danh-sach/phim-moi-cap-nhat-v3?page=${page}`).then((r) => {
     if (!r.ok) throw new Error(`PhimAPI error: ${r.status}`);
     return r.json();
   });
@@ -30,6 +37,28 @@ export const getPhimByCategory = (categorySlug, page = 1, limit = 20) =>
     if (!r.ok) throw new Error(`PhimAPI error: ${r.status}`);
     return r.json();
   });
+
+export const getPhimByCountry = (countrySlug, page = 1, limit = 20) =>
+  fetch(`${BASE_URL}/v1/api/quoc-gia/${countrySlug}?page=${page}&limit=${limit}&sort_field=modified.time&sort_type=desc`).then((r) => {
+    if (!r.ok) throw new Error(`PhimAPI error: ${r.status}`);
+    return r.json();
+  });
+
+export const getPhimByYear = (year, page = 1, limit = 20) =>
+  fetch(`${BASE_URL}/v1/api/nam/${year}?page=${page}&limit=${limit}&sort_field=modified.time&sort_type=desc`).then((r) => {
+    if (!r.ok) throw new Error(`PhimAPI error: ${r.status}`);
+    return r.json();
+  });
+
+export const getPhimByTmdb = (type, id) =>
+  fetch(`${BASE_URL}/tmdb/${type}/${id}`).then((r) => {
+    if (!r.ok) throw new Error(`PhimAPI error: ${r.status}`);
+    return r.json();
+  });
+
+export const getAllCategories = () => fetch(`${BASE_URL}/the-loai`).then((r) => r.json());
+
+export const getAllCountries = () => fetch(`${BASE_URL}/quoc-gia`).then((r) => r.json());
 
 export const PHIM_CATEGORIES = [
   { name: "Hành Động", slug: "hanh-dong" },
