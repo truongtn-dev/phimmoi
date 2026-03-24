@@ -5,6 +5,8 @@ import MovieCard from '../components/movies/MovieCard';
 import { COLORS, FONT, SPACING } from '../constants/theme';
 import { Dimensions } from 'react-native';
 
+import * as Icons from '../components/common/icons';
+
 const CARD_W = (Dimensions.get('window').width - SPACING.lg * 2 - SPACING.md) / 2;
 
 export default function FavoritesScreen({ navigation }) {
@@ -13,7 +15,7 @@ export default function FavoritesScreen({ navigation }) {
   if (!favorites.length) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyIcon}>🤍</Text>
+        <Icons.Heart size={64} color={COLORS.textMuted} style={{ marginBottom: SPACING.lg }} />
         <Text style={styles.emptyTitle}>Chưa có phim yêu thích</Text>
         <Text style={styles.emptySub}>Thêm phim vào danh sách để xem lại nhanh hơn</Text>
       </View>

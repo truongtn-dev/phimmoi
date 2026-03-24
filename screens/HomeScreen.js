@@ -15,10 +15,22 @@ export default function HomeScreen({ navigation }) {
   const hoatHinh = useQuery({ queryKey: ['hoat-hinh'], queryFn: () => getPhimList('hoat-hinh', 1, 20) });
   const tvShows = useQuery({ queryKey: ['tv-shows'], queryFn: () => getPhimList('tv-shows', 1, 20) });
 
-  const newItems = newMovies.data?.items ?? [];
-  const heroMovie = newItems[0];
+  const adminMovies = useQuery({ 
+    queryKey: ['phim-admin'], 
+    queryFn: async () => {
+      const { supabase } = await import('../integrations/supabase/client');
+      const { data } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
+      return data || [];
+    }
+  });
 
-  const navigateDetail = (item) => navigation.navigate('MovieDetail', { slug: item.slug });
+  const newItems = newMovies.data?.items ?? [];
+  const heroMovie = adminMovies.data?.[0] || newItems[0];
+
+  const navigateDetail = (item) => {
+    if (item.id) navigation.navigate('MovieDetail', { id: item.id, isSupabase: true });
+    else navigation.navigate('MovieDetail', { slug: item.slug });
+  };
 
   const refetch = () => {
     newMovies.refetch();
@@ -26,6 +38,7 @@ export default function HomeScreen({ navigation }) {
     phimLe.refetch();
     hoatHinh.refetch();
     tvShows.refetch();
+    adminMovies.refetch();
   };
 
   return (
@@ -40,10 +53,21 @@ export default function HomeScreen({ navigation }) {
         ) : (
           <HeroBanner
             movie={heroMovie}
-            onPlay={() => heroMovie && navigation.navigate('Watch', { slug: heroMovie.slug })}
-            onInfo={() => heroMovie && navigateDetail(heroMovie)}
+            onPlay={() => {
+              if (heroMovie.id) navigation.navigate('Watch', { id: heroMovie.id, isSupabase: true });
+              else navigation.navigate('Watch', { slug: heroMovie.slug });
+            }}
+            onInfo={() => navigateDetail(heroMovie)}
           />
         )}
+
+        <CategoryRow
+          title="Phim Đặc Sắc"
+          icon={<Icons.Star size={20} color="#FFD700" />}
+          movies={adminMovies.data}
+          isLoading={adminMovies.isLoading}
+          onMoviePress={navigateDetail}
+        />
 
         <CategoryRow
           title="Mới Cập Nhật"

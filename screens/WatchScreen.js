@@ -8,11 +8,39 @@ import CategoryRow from '../components/movies/CategoryRow';
 import { COLORS, RADIUS, FONT, SPACING } from '../constants/theme';
 import { Film, Tag, Monitor, ChevronLeft } from '../components/common/icons';
 import { useAuth } from '../context/AuthContext';
+import YoutubePlayer from 'react-native-youtube-iframe';
+
+const getYTId = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
 
 function PlayerView({ url, onUpdate, initialTime }) {
+  const ytId = getYTId(url);
   const updateRef = useRef(onUpdate);
   updateRef.current = onUpdate;
 
+  const playerRef = useRef(null);
+
+  // --- YOUTUBE PLAYER ---
+  if (ytId) {
+    return (
+      <View style={styles.videoPlayer}>
+        <YoutubePlayer
+          ref={playerRef}
+          height={220}
+          videoId={ytId}
+          play={true}
+          initialPlayerParams={{ start: Math.floor(initialTime) }}
+        />
+        <YouTubeTracker playerRef={playerRef} onUpdate={(t, d) => updateRef.current(t, d)} />
+      </View>
+    );
+  }
+
+  // --- STANDARD PLAYER ---
   const player = useVideoPlayer(url, (p) => {
     p.loop = false;
     p.play();
@@ -22,51 +50,33 @@ function PlayerView({ url, onUpdate, initialTime }) {
 
   useEffect(() => {
     if (!player || initialTime <= 0) return;
-
     const performSeek = () => {
       if (seekDone.current) return;
       try {
-        // Android expo-video v3 seek workaround
         player.currentTime = initialTime;
-        
-        // Some Android devices need multiple attempts as buffer fills
         const current = player.currentTime || 0;
-        if (Math.abs(current - initialTime) < 5) {
-          seekDone.current = true;
-        }
+        if (Math.abs(current - initialTime) < 5) seekDone.current = true;
       } catch (e) {}
     };
-
-    // Retry aggressively every 500ms for the first 5 seconds
     const interval = setInterval(performSeek, 500);
     const timeout = setTimeout(() => clearInterval(interval), 5000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
+    return () => { clearInterval(interval); clearTimeout(timeout); };
   }, [player, initialTime]);
 
   useEffect(() => {
     if (!player) return;
     const sub = player.addListener('playingChange', (isPlaying) => {
       try {
-        if (player.status === 'readyToPlay') {
-          updateRef.current(player.currentTime, player.duration);
-        }
+        if (player.status === 'readyToPlay') updateRef.current(player.currentTime, player.duration);
       } catch (e) {}
     });
-    return () => {
-      try {
-        sub.remove();
-      } catch (e) {}
-    };
+    return () => sub.remove();
   }, [player]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       try {
-        if (player && player.status === 'readyToPlay' && player.playing) {
+        if (player?.status === 'readyToPlay' && player.playing) {
           updateRef.current(player.currentTime, player.duration);
         }
       } catch (e) {}
@@ -77,10 +87,44 @@ function PlayerView({ url, onUpdate, initialTime }) {
   return <VideoView style={styles.videoPlayer} player={player} allowsFullscreen allowsPictureInPicture />;
 }
 
+function YouTubeTracker({ playerRef, onUpdate }) {
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (playerRef.current) {
+        try {
+          const time = await playerRef.current.getCurrentTime();
+          const duration = await playerRef.current.getDuration();
+          onUpdate(time, duration);
+        } catch (e) {}
+      }
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+  return null;
+}
+
 export default function WatchScreen({ route, navigation }) {
   const { user } = useAuth();
-  const { slug } = route.params || {};
-  const { data, isLoading } = useQuery({ queryKey: ['phim-watch', slug], queryFn: () => getPhimDetail(slug), enabled: !!slug });
+  const { slug, id, isSupabase } = route.params || {};
+  
+  const { data, isLoading } = useQuery({ 
+    queryKey: ['phim-watch', slug, id, isSupabase], 
+    queryFn: async () => {
+      if (isSupabase) {
+        const { supabase } = await import('../integrations/supabase/client');
+        const { data: movie } = await supabase.from('movies').select('*').eq('id', id).single();
+        if (movie) {
+          return {
+            movie: { ...movie, name: movie.title, slug: movie.id },
+            episodes: [{ server_data: [{ name: 'Full', slug: movie.id, link_m3u8: movie.video_url }] }]
+          };
+        }
+      }
+      return getPhimDetail(slug);
+    }, 
+    enabled: !!slug || !!id 
+  });
+
   const suggested = useQuery({ queryKey: ['suggested'], queryFn: () => getPhimMoiCapNhat(1) });
   const { saveProgress, getProgress, isLoaded } = useWatchHistory();
 
@@ -94,23 +138,15 @@ export default function WatchScreen({ route, navigation }) {
   const visibleEps = currentServer?.server_data?.slice(0, 50) ?? [];
 
   useEffect(() => {
-    // WAITING FOR: movie data, episode list, AND watch history load
     if (movie && visibleEps.length > 0 && isLoaded && !currentVideoUrl) {
       const historyEntry = getProgress(movie.slug);
       let targetEp = visibleEps[0];
       let resumeTime = 0;
 
       if (historyEntry && historyEntry.episode) {
-        // Fuzzy match: check name or extracted number to handle 'Tap 1' vs 'Tap 01'
         const getNum = (s) => (s.toString().match(/\d+/) || [null])[0];
         const targetNum = getNum(historyEntry.episode);
-
-        const found = visibleEps.find(e => {
-          if (e.name === historyEntry.episode) return true;
-          if (targetNum && getNum(e.name) === targetNum) return true;
-          return false;
-        });
-
+        const found = visibleEps.find(e => e.name === historyEntry.episode || (targetNum && getNum(e.name) === targetNum));
         if (found) {
           targetEp = found;
           resumeTime = historyEntry.progress || 0;
@@ -122,7 +158,6 @@ export default function WatchScreen({ route, navigation }) {
     }
   }, [movie, visibleEps, currentVideoUrl, getProgress, isLoaded]);
 
-  // STABLE Update function
   const handleUpdate = React.useCallback((time, duration) => {
     if (movie && currentEpName && time > 0) {
       saveProgress(movie, currentEpName, time, duration);
@@ -132,7 +167,7 @@ export default function WatchScreen({ route, navigation }) {
   const handleSelectEp = (item) => {
     setCurrentVideoUrl(item.link_m3u8);
     setCurrentEpName(item.name);
-    setInitialSeek(0); // Mới chọn tập thì xem từ đầu
+    setInitialSeek(0);
     saveProgress(movie, item.name, 0, 0);
   };
 

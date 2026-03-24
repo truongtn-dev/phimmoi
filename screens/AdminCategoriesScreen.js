@@ -4,13 +4,33 @@ import { supabase } from '../integrations/supabase/client';
 import { COLORS, FONT, RADIUS, SPACING } from '../constants/theme';
 import * as Icons from '../components/common/icons';
 
+import { PHIM_CATEGORIES, PHIM_TYPES } from '../services/phimapi';
+
 export default function AdminCategoriesScreen() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCat, setEditingCat] = useState(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const [form, setForm] = useState({ name: '', slug: '' });
+
+  const handleSeed = async () => {
+    setIsSeeding(true);
+    const allToSeed = [...PHIM_CATEGORIES, ...PHIM_TYPES.filter(t => t.slug !== 'hoat-hinh')]; // Avoid duplicate hoạt hình
+    try {
+      const { error } = await supabase.from('categories').upsert(allToSeed, { onConflict: 'slug' });
+      if (error) Alert.alert('Lỗi', error.message);
+      else {
+        Alert.alert('Thành công', `Đã đồng bộ ${allToSeed.length} thể loại mặc định.`);
+        fetchCategories();
+      }
+    } catch (e) {
+      Alert.alert('Lỗi', 'Không thể kết nối CSDL');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -41,7 +61,7 @@ export default function AdminCategoriesScreen() {
 
   const handleSave = async () => {
     if (!form.name.trim()) return Alert.alert('Lỗi', 'Vui lòng nhập tên thể loại');
-    
+
     // Auto generate slug if empty
     const finalSlug = form.slug.trim() ? form.slug.trim() : generateSlug(form.name);
 
@@ -59,10 +79,12 @@ export default function AdminCategoriesScreen() {
   const handleDelete = (id) => {
     Alert.alert('Xác nhận', 'Bạn có chắc chắn muốn xoá thể loại này?', [
       { text: 'Huỷ', style: 'cancel' },
-      { text: 'Xoá', style: 'destructive', onPress: async () => {
+      {
+        text: 'Xoá', style: 'destructive', onPress: async () => {
           await supabase.from('categories').delete().eq('id', id);
           fetchCategories();
-      }}
+        }
+      }
     ]);
   };
 
@@ -96,13 +118,16 @@ export default function AdminCategoriesScreen() {
 
   return (
     <View style={styles.container}>
-      <Pressable style={styles.addBtn} onPress={() => openModal()}>
-        <Icons.Plus size={20} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.addBtnText}>Thêm Thể Loại Mới</Text>
-      </Pressable>
-
-      <Text style={styles.warning}>Chú ý: Form quản lý Thể loại tự do. Tuy nhiên phần lớn phim đang load từ API ngoại (OPhim). Nếu bạn muốn map đúng, hãy đặt Slug khớp với máy chủ OPhim.</Text>
-
+      <View style={{flexDirection:'row', gap: 12}}>
+        <Pressable style={[styles.addBtn, {flex:1}]} onPress={() => openModal()}>
+          <Icons.Plus size={20} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.addBtnText}>Thêm Mới</Text>
+        </Pressable>
+        <Pressable style={[styles.addBtn, {flex:1, backgroundColor: COLORS.surface}]} onPress={handleSeed} disabled={isSeeding}>
+          <Icons.Refresh size={18} color={COLORS.textPrimary} style={{ marginRight: 8 }} />
+          <Text style={[styles.addBtnText, {color: COLORS.textPrimary}]}>{isSeeding ? 'Đang tạ...' : 'Đồng bộ API'}</Text>
+        </Pressable>
+      </View>
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={COLORS.primary} /></View>
       ) : categories.length === 0 ? (
@@ -115,13 +140,13 @@ export default function AdminCategoriesScreen() {
         <View style={styles.modalBg}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{editingCat ? 'Sửa Thể Loại' : 'Thêm Thể Loại'}</Text>
-            
+
             <Text style={styles.label}>Tên chuyên mục *</Text>
-            <TextInput style={styles.input} value={form.name} onChangeText={t => setForm({...form, name: t})} placeholder="VD: Phim Chiếu Rạp" placeholderTextColor="#666" />
-            
+            <TextInput style={styles.input} value={form.name} onChangeText={t => setForm({ ...form, name: t })} placeholder="VD: Phim Chiếu Rạp" placeholderTextColor="#666" />
+
             <Text style={styles.label}>Slug liên kết (Bỏ trống để tự tạo)</Text>
-            <TextInput style={styles.input} value={form.slug} onChangeText={t => setForm({...form, slug: t})} placeholder="VD: phim-chieu-rap" placeholderTextColor="#666" autoCapitalize="none" />
-            
+            <TextInput style={styles.input} value={form.slug} onChangeText={t => setForm({ ...form, slug: t })} placeholder="VD: phim-chieu-rap" placeholderTextColor="#666" autoCapitalize="none" />
+
             <View style={styles.modalFooter}>
               <Pressable style={[styles.modalBtn, { backgroundColor: COLORS.surface }]} onPress={() => setModalVisible(false)}>
                 <Text style={{ color: COLORS.textMuted, fontWeight: '600' }}>Huỷ</Text>

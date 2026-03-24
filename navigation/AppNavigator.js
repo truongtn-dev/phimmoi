@@ -21,6 +21,7 @@ import AdminCommentsScreen from '../screens/AdminCommentsScreen';
 import AdminMoviesScreen from '../screens/AdminMoviesScreen';
 import AdminUsersScreen from '../screens/AdminUsersScreen';
 import AdminCategoriesScreen from '../screens/AdminCategoriesScreen';
+import AdminRatingsScreen from '../screens/AdminRatingsScreen';
 import * as Icons from '../components/common/icons';
 
 const Stack = createNativeStackNavigator();
@@ -67,6 +68,7 @@ function AppStack() {
       <Stack.Screen name="AdminMovies" component={AdminMoviesScreen} options={{ title: 'Quản Lý Phim' }} />
       <Stack.Screen name="AdminCategories" component={AdminCategoriesScreen} options={{ title: 'Quản Lý Thể Loại' }} />
       <Stack.Screen name="AdminUsers" component={AdminUsersScreen} options={{ title: 'Quản Lý Người Dùng' }} />
+      <Stack.Screen name="AdminRatings" component={AdminRatingsScreen} options={{ title: 'Quản Lý Đánh Giá' }} />
       
       {/* Auth screens accessible from inside the app */}
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

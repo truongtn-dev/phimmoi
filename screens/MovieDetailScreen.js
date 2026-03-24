@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, ScrollView, Pressable, TextInput, FlatList, StyleSheet, Dimensions, Modal, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getPhimDetail, getPhimImageUrl } from '../services/phimapi';
@@ -12,17 +12,114 @@ import SkeletonLoader from '../components/common/SkeletonLoader';
 import { COLORS, RADIUS, FONT, SPACING } from '../constants/theme';
 import * as Icons from '../components/common/icons';
 
+function RatingStars({ rating, onRate, max = 5 }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 4, marginVertical: 8 }}>
+      {[...Array(max)].map((_, i) => (
+        <Pressable key={i} onPress={() => onRate && onRate(i + 1)}>
+          <Icons.Star 
+            size={24} 
+            color={i < Math.round(rating) ? "#F5C518" : "rgba(255,255,255,0.1)"} 
+          />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 const { width: SW } = Dimensions.get('window');
 const REPORT_REASONS = ['Video không phát', 'Link hỏng', 'Sai phụ đề', 'Chất lượng kém', 'Khác'];
 
 export default function MovieDetailScreen({ route, navigation }) {
-  const { slug } = route.params || {};
-  const { data, isLoading } = useQuery({ queryKey: ['phim-detail', slug], queryFn: () => getPhimDetail(slug), enabled: !!slug });
+  const { slug, id, isSupabase } = route.params || {};
+  const { data, isLoading } = useQuery({ 
+    queryKey: ['phim-detail', slug, id, isSupabase], 
+    queryFn: async () => {
+      if (isSupabase) {
+        const { supabase } = await import('../integrations/supabase/client');
+        const { data: movie } = await supabase.from('movies').select('*').eq('id', id).single();
+        if (movie) {
+          return {
+            movie: {
+              ...movie,
+              name: movie.title,
+              slug: movie.id, // Use ID as slug for history/FAV if slug missing
+              origin_name: movie.title,
+              category: movie.category ? [{ name: movie.category }] : [],
+            },
+            episodes: [{
+              server_data: [{
+                name: 'Full',
+                slug: movie.id,
+                link_m3u8: movie.video_url
+              }]
+            }]
+          };
+        }
+      }
+      return getPhimDetail(slug);
+    }, 
+    enabled: !!slug || !!id 
+  });
   const { isFavorite, toggleFavorite } = useFavoritesContext();
   const { getComments, addComment, deleteComment } = useCommentsContext();
   const { addReport } = useReportsContext();
   const { user, isAdmin } = useAuth();
-  const { history } = useWatchHistory();
+  const { history, isLoaded } = useWatchHistory();
+
+  const [avgRating, setAvgRating] = useState(0);
+  const [userRating, setUserRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+
+  useEffect(() => {
+    if (movie?.id) {
+      fetchRatings();
+    }
+  }, [movie]);
+
+  const fetchRatings = async () => {
+    const { supabase } = await import('../integrations/supabase/client');
+    const mid = movie.id || movie.slug;
+    const { data: all } = await supabase.from('ratings').select('rating').eq('movie_id', mid);
+    if (all && all.length > 0) {
+      const sum = all.reduce((acc, r) => acc + r.rating, 0);
+      setAvgRating(sum / all.length);
+      setRatingCount(all.length);
+    } else {
+      setAvgRating(0);
+      setRatingCount(0);
+    }
+    if (user) {
+      const { data: mine } = await supabase.from('ratings').select('rating').eq('movie_id', mid).eq('user_email', user.email).maybeSingle();
+      if (mine) setUserRating(mine.rating);
+      else setUserRating(0);
+    }
+  };
+
+  const handleRate = async (val) => {
+    if (!user) {
+      Alert.alert('Hãy đăng nhập', 'Bạn cần đăng nhập để đánh giá phim.', [{ text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }, { text: 'Hủy' }]);
+      return;
+    }
+    const { supabase } = await import('../integrations/supabase/client');
+    const finalMovieId = movie.id || movie.slug; // Support both UUID and Slug
+    
+    const { error } = await supabase.from('ratings').upsert({ 
+      movie_id: finalMovieId, 
+      user_email: user.email, 
+      rating: val,
+      movie_title: movie.name
+    }, { onConflict: 'movie_id,user_email' });
+
+    if (!error) {
+      setUserRating(val);
+      fetchRatings();
+      Alert.alert('Thành công', 'Đã lưu đánh giá ' + val + ' sao của bạn!');
+    } else {
+      console.error('Rating Error:', error);
+      Alert.alert('Lỗi', 'Không thể lưu: ' + (error.message || 'Lỗi kết nối'));
+    }
+  };
 
   const [commentText, setCommentText] = useState('');
   const [showReport, setShowReport] = useState(false);
@@ -34,8 +131,6 @@ export default function MovieDetailScreen({ route, navigation }) {
   const totalEps = episodes[0]?.server_data?.length ?? 0;
   const fav = movie ? isFavorite(movie.slug) : false;
   const comments = movie ? getComments(movie.slug) : [];
-  
-  // KIỂM TRA ĐIỀU KIỆN: Người dùng đã thực xem phim này chưa?
   const hasWatched = history.some(h => h.slug === movie?.slug);
 
   const handleAddComment = () => {
@@ -101,6 +196,19 @@ export default function MovieDetailScreen({ route, navigation }) {
       <View style={styles.infoWrap}>
         <Text style={styles.title}>{movie.name}</Text>
         <Text style={styles.originName}>{movie.origin_name}</Text>
+
+        <View style={{flexDirection:'row', alignItems:'center', marginTop: 8}}>
+          <RatingStars 
+            rating={avgRating} 
+            max={5}
+            onRate={handleRate}
+          />
+          <Text style={{color: COLORS.textSecondary, marginLeft: 10, fontSize: FONT.sm}}>{avgRating.toFixed(1)}/5 ({ratingCount} lượt)</Text>
+        </View>
+
+        {userRating > 0 && (
+          <Text style={{color: COLORS.primary, fontSize: 11, fontStyle: 'italic', marginTop: 2}}>Bạn đã đánh giá {userRating} sao</Text>
+        )}
 
         <View style={styles.metaRow}>
           <View style={styles.badge}><Text style={styles.badgeText}>{movie.year}</Text></View>

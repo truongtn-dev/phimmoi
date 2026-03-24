@@ -33,6 +33,7 @@ export default function AdminScreen({ navigation }) {
     { icon: <Icons.Folder size={24} color="#F5C518" />, title: 'Quản lý Thể loại', desc: 'Danh mục thể loại phim', color: '#F5C518', action: () => navigation.navigate('AdminCategories') },
     { icon: <Icons.Users size={24} color="#46D369" />, title: 'Quản lý Người dùng', desc: 'Danh sách tài khoản', color: '#46D369', action: () => navigation.navigate('AdminUsers') },
     { icon: <Icons.MessageSquare size={24} color="#1E90FF" />, title: 'Quản lý Bình luận', desc: 'Xóa bình luận vi phạm', color: '#1E90FF', action: () => navigation.navigate('AdminComments') },
+    { icon: <Icons.Star size={24} color="#FFD700" />, title: 'Quản lý Đánh giá', desc: 'Xem phản hồi từ người dùng', color: '#FFD700', action: () => navigation.navigate('AdminRatings') },
     { icon: <Icons.AlertTriangle size={24} color="#FF6B6B" />, title: 'Quản lý Báo cáo', desc: `Xem & xử lý ${reports.length} báo cáo`, color: '#FF6B6B', action: () => navigation.navigate('Report') },
   ];
 

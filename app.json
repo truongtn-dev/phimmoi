@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "phimmoi-expo",
-    "slug": "phimmoi-expo",
-    "version": "1.0.0",
+    "name": "phimmoi",
+    "slug": "phimmoi",
+    "version": "1.1.0",
     "sdkVersion": "54.0.0",
     "platforms": [
       "ios",
