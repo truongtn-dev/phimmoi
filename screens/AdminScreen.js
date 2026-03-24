@@ -1,21 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
-import { useFavoritesContext } from '../context/FavoritesContext';
+import { supabase } from '../integrations/supabase/client';
+import { useReportsContext } from '../context/ReportsContext';
 import { useCommentsContext } from '../context/CommentsContext';
-import useWatchHistory from '../hooks/useWatchHistory';
 import { COLORS, FONT, SPACING, RADIUS } from '../constants/theme';
 import * as Icons from '../components/ui/icons';
 
 export default function AdminScreen({ navigation }) {
-  const { favorites } = useFavoritesContext();
+  const { reports } = useReportsContext();
   const { totalComments } = useCommentsContext();
-  const { history } = useWatchHistory();
+  const [dbStats, setDbStats] = useState({ movies: 0, users: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Fetch user limits and total movies globally directly using exact count
+      const { count: mCount } = await supabase.from('movies').select('*', { count: 'exact', head: true });
+      const { count: uCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+      setDbStats({ movies: mCount || 0, users: uCount || 0 });
+    };
+    fetchStats();
+  }, []);
 
   const stats = [
-    { icon: <Icons.Film size={28} color="#E50914" />, title: 'Phim yêu thích', count: favorites.length, color: '#E50914' },
-    { icon: <Icons.MessageSquare size={28} color="#1E90FF" />, title: 'Tổng bình luận', count: totalComments, color: '#1E90FF' },
-    { icon: <Icons.Clock size={28} color="#F5C518" />, title: 'Lịch sử xem', count: history.length, color: '#F5C518' },
-    { icon: <Icons.Users size={28} color="#46D369" />, title: 'Người dùng', count: '---', color: '#46D369' },
+    { icon: <Icons.Film size={28} color="#E50914" />, title: 'Phim cục bộ', count: dbStats.movies, color: '#E50914' },
+    { icon: <Icons.Users size={28} color="#46D369" />, title: 'Người dùng', count: dbStats.users, color: '#46D369' },
+    { icon: <Icons.MessageSquare size={28} color="#1E90FF" />, title: 'Bình luận', count: totalComments, color: '#1E90FF' },
+    { icon: <Icons.AlertTriangle size={28} color="#F5C518" />, title: 'Lỗi phát sinh', count: reports.length, color: '#F5C518' },
   ];
 
   const adminCards = [
@@ -23,7 +33,7 @@ export default function AdminScreen({ navigation }) {
     { icon: <Icons.Folder size={24} color="#F5C518" />, title: 'Quản lý Thể loại', desc: 'Danh mục thể loại phim', color: '#F5C518', action: () => navigation.navigate('AdminCategories') },
     { icon: <Icons.Users size={24} color="#46D369" />, title: 'Quản lý Người dùng', desc: 'Danh sách tài khoản', color: '#46D369', action: () => navigation.navigate('AdminUsers') },
     { icon: <Icons.MessageSquare size={24} color="#1E90FF" />, title: 'Quản lý Bình luận', desc: 'Xóa bình luận vi phạm', color: '#1E90FF', action: () => navigation.navigate('AdminComments') },
-    { icon: <Icons.AlertTriangle size={24} color="#FF6B6B" />, title: 'Quản lý Báo cáo', desc: 'Xem & xử lý báo cáo', color: '#FF6B6B', action: () => navigation.navigate('Report') },
+    { icon: <Icons.AlertTriangle size={24} color="#FF6B6B" />, title: 'Quản lý Báo cáo', desc: `Xem & xử lý ${reports.length} báo cáo`, color: '#FF6B6B', action: () => navigation.navigate('Report') },
   ];
 
   return (

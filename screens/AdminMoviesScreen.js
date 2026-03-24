@@ -6,16 +6,22 @@ import * as Icons from '../components/ui/icons';
 
 export default function AdminMoviesScreen() {
   const [movies, setMovies] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
 
-  const [form, setForm] = useState({ title: '', description: '', poster_url: '', category: 'Action', rating: '0' });
+  const [form, setForm] = useState({ title: '', description: '', poster_url: '', category: '', rating: '0' });
 
   const fetchMovies = async () => {
     setLoading(true);
     const { data, error } = await supabase.from('movies').select('*').order('created_at', { ascending: false });
     if (!error && data) setMovies(data);
+    
+    // Fetch categories
+    const { data: catData } = await supabase.from('categories').select('id, name');
+    if (catData) setCategories(catData);
+
     setLoading(false);
   };
 
@@ -107,7 +113,21 @@ export default function AdminMoviesScreen() {
               <TextInput style={styles.input} value={form.title} onChangeText={t => setForm({...form, title: t})} placeholderTextColor="#666" placeholder="Nhập tên phim" />
               
               <Text style={styles.label}>Thể loại</Text>
-              <TextInput style={styles.input} value={form.category} onChangeText={t => setForm({...form, category: t})} placeholderTextColor="#666" placeholder="Ví dụ: Hành động, Tâm lý" />
+              {categories.length === 0 ? (
+                <Text style={{color: COLORS.textMuted, fontSize: FONT.sm, fontStyle: 'italic'}}>Chưa có thể loại nào. Hãy tạo trong Quản lý Thể loại.</Text>
+              ) : (
+                <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4}}>
+                  {categories.map(c => (
+                    <Pressable 
+                      key={c.id} 
+                      onPress={() => setForm({...form, category: c.name})}
+                      style={[styles.chip, form.category === c.name && styles.chipActive]}
+                    >
+                      <Text style={[styles.chipText, form.category === c.name && styles.chipTextActive]}>{c.name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
               
               <Text style={styles.label}>Điểm đánh giá (0-10)</Text>
               <TextInput style={styles.input} value={form.rating} onChangeText={t => setForm({...form, rating: t})} placeholderTextColor="#666" keyboardType="numeric" />
@@ -152,4 +172,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: COLORS.surface, color: COLORS.textPrimary, padding: SPACING.md, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border },
   modalFooter: { flexDirection: 'row', marginTop: SPACING.xl, justifyContent: 'flex-end' },
   modalBtn: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: RADIUS.md },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: COLORS.border },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  chipText: { color: COLORS.textSecondary, fontSize: FONT.sm },
+  chipTextActive: { color: '#fff', fontWeight: '700' },
 });

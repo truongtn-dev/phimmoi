@@ -16,15 +16,13 @@ export default function ProfileScreen({ navigation }) {
     ]);
   };
 
-  const menuItems = [
+  const menuItems = isAdmin ? [
+    { icon: <Icons.Shield size={20} color="#1E90FF" />, label: 'Truy cập Quản Trị Viên', onPress: () => navigation.navigate('Admin') }
+  ] : [
     { icon: <Icons.Heart size={20} color="#E50914" />, label: `Phim yêu thích (${favorites.length})`, onPress: () => navigation.navigate('FavoritesTab') },
     { icon: <Icons.Clock size={20} color="#F5C518" />, label: 'Lịch sử xem', onPress: () => navigation.navigate('WatchHistory') },
     { icon: <Icons.AlertTriangle size={20} color="#FF6B6B" />, label: 'Báo cáo lỗi phim', onPress: () => navigation.navigate('Report') },
   ];
-
-  if (isAdmin) {
-    menuItems.push({ icon: <Icons.Shield size={20} color="#1E90FF" />, label: 'Quản trị viên', onPress: () => navigation.navigate('Admin') });
-  }
 
   const joinDate = user?.created_at ? new Date(user.created_at).toLocaleDateString('vi-VN') : 'N/A';
 
